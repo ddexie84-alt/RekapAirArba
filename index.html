@@ -1741,12 +1741,32 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     // ADD DATA - SOLAR MASUK
     // ============================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const masukSopir = document.getElementById('masukSopir');
+      if (masukSopir) {
+        masukSopir.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = e.target.value.toLowerCase().trim();
+            if(!val) return;
+            const found = masterSopir.find(x => x.nama.toLowerCase().startsWith(val));
+            if(found) {
+              e.target.value = found.nama;
+              document.getElementById('masukPlat').value = found.plat;
+              const masukInput = document.getElementById('masukInput');
+              if (masukInput) masukInput.focus();
+            }
+          }
+        });
+      }
+    });
+  
     function addMasuk() {
       const lokasi = document.getElementById('masukLokasi').value;
       const plat = document.getElementById('masukPlat').value.trim().toUpperCase();
       const sopir = document.getElementById('masukSopir').value.trim();
-      const jirgen = parseInt(document.getElementById('masukJirgen').value) || 0;
-      const liter = Math.min(parseInt(document.getElementById('masukLiter').value) || 0, 34);
+      const {jirgen, liter} = parseInput('masukInput');
 
       if (!lokasi) { showToast('Pilih lokasi dulu!', 'error'); return; }
       if (!plat) { showToast('Isi nomor plat!', 'error'); return; }
@@ -1786,8 +1806,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const hmIsi = document.getElementById('loaderHmIsi').value;
       const hmPrev = document.getElementById('loaderHmPrev').value;
       const waktu = document.getElementById('loaderWaktu').value;
-      const jirgen = parseInt(document.getElementById('loaderJirgen').value) || 0;
-      const liter = Math.min(parseInt(document.getElementById('loaderLiter').value) || 0, 34);
+      const {jirgen, liter} = parseInput('loaderInput');
 
       if (!operator) { showToast('Pilih/ketik nama operator!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
@@ -1826,10 +1845,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const waktu = document.getElementById('exaWaktu').value;
       const retase = parseInt(document.getElementById('exaRetase').value) || 0;
       const retaseFull = parseInt(document.getElementById('exaRetaseFull').value) || 0;
-      const jirgen = parseInt(document.getElementById('exaJirgen').value) || 0;
-      const liter = Math.min(parseInt(document.getElementById('exaLiter').value) || 0, 34);
-      const jirgenFull = parseInt(document.getElementById('exaJirgenFull').value) || 0;
-      const literFull = Math.min(parseInt(document.getElementById('exaLiterFull').value) || 0, 34);
+      const {jirgen, liter} = parseInput('exaInput');
+      const {jirgen: jirgenFull, liter: literFull} = parseInput('exaInputFull');
 
       if (!alat) { showToast('Isi nama alat!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
@@ -1868,10 +1885,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const sopir = document.getElementById('roda10Sopir').value.trim();
       const retase = parseInt(document.getElementById('roda10Retase').value) || 0;
       const retaseFull = parseInt(document.getElementById('roda10RetaseFull').value) || 0;
-      const jirgen = parseInt(document.getElementById('roda10Jirgen').value) || 0;
-      const liter = Math.min(parseInt(document.getElementById('roda10Liter').value) || 0, 34);
-      const jirgenFull = parseInt(document.getElementById('roda10JirgenFull').value) || 0;
-      const literFull = Math.min(parseInt(document.getElementById('roda10LiterFull').value) || 0, 34);
+      const {jirgen, liter} = parseInput('roda10Input');
+      const {jirgen: jirgenFull, liter: literFull} = parseInput('roda10InputFull');
 
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
@@ -1903,8 +1918,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     function addPabrik() {
       const peruntukan = document.getElementById('pabrikPeruntukan').value.trim();
-      const jirgen = parseInt(document.getElementById('pabrikJirgen').value) || 0;
-      const liter = Math.min(parseInt(document.getElementById('pabrikLiter').value) || 0, 34);
+      const {jirgen, liter} = parseInput('pabrikInput');
 
       if (!peruntukan) { showToast('Isi peruntukan air!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
