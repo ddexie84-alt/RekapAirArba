@@ -2315,6 +2315,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         data.pabrik.forEach(item => { totalKeluarLiters += toTotalLiters(item.jirgen, item.liter); });
 
         const selisih = totalMasukLiters - totalKeluarLiters;
+        const stockPrevLiters = toTotalLiters(data.stockPrev.jirgen, data.stockPrev.liter);
         const stockAkhir = stockPrevLiters + totalMasukLiters - totalKeluarLiters;
 
         wsMasuk.getCell('E26').value = formatFromLiters(totalMasukLiters);
@@ -2410,7 +2411,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         showToast('Export Excel berhasil didownload!', 'success');
       } catch (e) {
         console.error(e);
-        showToast('Gagal export excel. Periksa koneksi internet (ExcelJS error).', 'error');
+        showToast('Gagal export excel: ' + e.message, 'error');
       }
     }
 
