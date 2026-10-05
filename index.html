@@ -964,22 +964,22 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       <div class="stock-item">
         <div class="stock-label">Stock Awal</div>
         <div class="stock-value" id="stockAwal">0</div>
-        <div class="stock-unit">liter</div>
+        <div class="stock-unit">jirgen</div>
       </div>
       <div class="stock-item">
         <div class="stock-label">Masuk</div>
         <div class="stock-value positive" id="stockMasuk">+0</div>
-        <div class="stock-unit">liter</div>
+        <div class="stock-unit">jirgen</div>
       </div>
       <div class="stock-item">
         <div class="stock-label">Keluar</div>
         <div class="stock-value negative" id="stockKeluar">-0</div>
-        <div class="stock-unit">liter</div>
+        <div class="stock-unit">jirgen</div>
       </div>
       <div class="stock-item">
         <div class="stock-label">Stock Akhir</div>
         <div class="stock-value pulse" id="stockAkhir">0</div>
-        <div class="stock-unit">liter</div>
+        <div class="stock-unit">jirgen</div>
       </div>
     </div>
 
@@ -1339,7 +1339,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="summary-icon">📐</div>
           <div class="summary-label">Selisih Masuk - Keluar</div>
           <div class="summary-value" id="sumSelisihVal">0</div>
-          <div class="summary-detail" id="sumSelisihDetail">liter</div>
+          <div class="summary-detail" id="sumSelisihDetail">jirgen</div>
         </div>
         <div class="summary-card stock highlight">
           <div class="summary-icon">⛽</div>
@@ -1704,14 +1704,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     }
 
     async function init() {
+      const today = new Date();
+      
+      
       await loadMasterData();
       
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      currentDate = `${yyyy}-${mm}-${dd}`;
-      document.getElementById('currentDate').value = currentDate;
+      // Removed duplicate today definition below
+      
 
       const hh = String(today.getHours()).padStart(2, '0');
       const min = String(today.getMinutes()).padStart(2, '0');
@@ -2344,10 +2343,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const stockAkhir = stockPrevLiters + totalMasuk - totalKeluar;
 
       // Update stock bar
-      document.getElementById('stockAwal').textContent = stockPrevLiters;
-      document.getElementById('stockMasuk').textContent = `+${totalMasuk}`;
-      document.getElementById('stockKeluar').textContent = `-${totalKeluar}`;
-      document.getElementById('stockAkhir').textContent = stockAkhir;
+      document.getElementById('stockAwal').textContent = formatFromLiters(stockPrevLiters);
+      document.getElementById('stockMasuk').textContent = `+${formatFromLiters(totalMasuk)}`;
+      document.getElementById('stockKeluar').textContent = `-${formatFromLiters(totalKeluar)}`;
+      document.getElementById('stockAkhir').textContent = formatFromLiters(stockAkhir);
 
       // Update ringkasan tab
       const masukJL = fromTotalLiters(totalMasuk);
