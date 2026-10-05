@@ -1103,11 +1103,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="text" class="form-input" id="loaderOperatorNew" placeholder="Nama baru...">
             </div>
             <div class="form-group">
-              <label class="form-label">HM Saat Diisi</label>
+              <label class="form-label">HM Saat Diisi (Opsional)</label>
               <input type="number" class="form-input" id="loaderHmIsi" step="0.1" placeholder="0">
             </div>
             <div class="form-group">
-              <label class="form-label">HM Sebelumnya</label>
+              <label class="form-label">HM Sebelumnya (Opsional)</label>
               <input type="number" class="form-input" id="loaderHmPrev" step="0.1" placeholder="0">
             </div>
             <div class="form-group">
@@ -1116,12 +1116,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="loaderJirgen" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="loaderLiter" min="0" max="35" placeholder="0">
-              </div>
-              <span class="jirgen-hint">Jirgen . Liter</span>
+              <input type="number" step="any" class="form-input" id="loaderInput" min="0" placeholder="Contoh: 2 atau 2.15">
+               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
           </div>
           <button class="btn btn-primary btn-block" onclick="addLoader()">➕ Tambah</button>
@@ -1164,11 +1160,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="text" class="form-input" id="exaOperator" placeholder="Nama operator">
             </div>
             <div class="form-group">
-              <label class="form-label">HM Saat Diisi</label>
+              <label class="form-label">HM Saat Diisi (Opsional)</label>
               <input type="number" class="form-input" id="exaHmIsi" step="0.1" placeholder="0">
             </div>
             <div class="form-group">
-              <label class="form-label">HM Sebelumnya</label>
+              <label class="form-label">HM Sebelumnya (Opsional)</label>
               <input type="number" class="form-input" id="exaHmPrev" step="0.1" placeholder="0">
             </div>
             <div class="form-group">
@@ -1185,20 +1181,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="exaJirgen" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="exaLiter" min="0" max="35" placeholder="0">
-              </div>
-              <span class="jirgen-hint">Jirgen . Liter</span>
+              <input type="number" step="any" class="form-input" id="exaInput" min="0" placeholder="Contoh: 2 atau 2.15">
+               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air (Full)</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="exaJirgenFull" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="exaLiterFull" min="0" max="35" placeholder="0">
-              </div>
+              <input type="number" step="any" class="form-input" id="exaInputFull" min="0" placeholder="Contoh: 2 atau 2.15">
               <span class="jirgen-hint">Jirgen . Liter</span>
             </div>
           </div>
@@ -1252,20 +1240,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="roda10Jirgen" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="roda10Liter" min="0" max="35" placeholder="0">
-              </div>
-              <span class="jirgen-hint">Jirgen . Liter</span>
+              <input type="number" step="any" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
+               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air (Full)</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="roda10JirgenFull" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="roda10LiterFull" min="0" max="35" placeholder="0">
-              </div>
+              <input type="number" step="any" class="form-input" id="roda10InputFull" min="0" placeholder="Contoh: 2 atau 2.15">
               <span class="jirgen-hint">Jirgen . Liter</span>
             </div>
           </div>
@@ -1306,12 +1286,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <div class="jirgen-input-group">
-                <input type="number" class="form-input" id="pabrikJirgen" min="0" placeholder="0">
-                <span class="jirgen-separator">.</span>
-                <input type="number" class="form-input" id="pabrikLiter" min="0" max="35" placeholder="0">
-              </div>
-              <span class="jirgen-hint">Jirgen . Liter</span>
+              <input type="number" step="any" class="form-input" id="pabrikInput" min="0" placeholder="Contoh: 2 atau 2.15">
+               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
           </div>
           <button class="btn btn-primary btn-block" onclick="addPabrik()">➕ Tambah</button>
@@ -1801,7 +1777,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     function addLoader() {
       let operator = document.getElementById('loaderOperator').value;
       const operatorNew = document.getElementById('loaderOperatorNew').value.trim();
-      if (operatorNew) operator = operatorNew;
+      if (operator && operatorNew) {
+        operator = operator + ' (Opr ' + operatorNew + ')';
+      } else if (operatorNew) {
+        operator = operatorNew;
+      }
 
       const hmIsi = document.getElementById('loaderHmIsi').value;
       const hmPrev = document.getElementById('loaderHmPrev').value;
