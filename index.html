@@ -944,7 +944,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         <span class="tab-icon">📊</span> Ringkasan
       </button>
       <button class="main-tab" onclick="switchMainTab('sopir')" id="tab-sopir">
-        <span class="tab-icon">👤</span> Daftar Sopir
+        <span class="tab-icon">👤</span> Karyawan/Unit
       </button>
     </div>
   </header>
@@ -1098,9 +1098,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <option value="Nimang">Nimang</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">Atau ketik nama baru</label>
-              <input type="text" class="form-input" id="loaderOperatorNew" placeholder="Nama baru...">
+            <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:28px;">
+              <input type="checkbox" id="loaderOprCadangan" style="width:18px; height:18px; accent-color: var(--primary);">
+              <label for="loaderOprCadangan" style="margin:0; font-size:14px; cursor:pointer;">Opr Cadangan (Daniel)</label>
             </div>
             <div class="form-group">
               <label class="form-label">HM Saat Diisi (Opsional)</label>
@@ -1157,7 +1157,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Nama Operator</label>
-              <input type="text" class="form-input" id="exaOperator" placeholder="Nama operator">
+              <input type="text" class="form-input" id="exaOperator" list="oprList" placeholder="Nama operator">
+            <datalist id="oprList"></datalist>
             </div>
             <div class="form-group">
               <label class="form-label">HM Saat Diisi (Opsional)</label>
@@ -1172,11 +1173,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="time" class="form-input" id="exaWaktu">
             </div>
             <div class="form-group">
-              <label class="form-label">Jml Retase</label>
+              <label class="form-label">Jml Retase (Opsional)</label>
               <input type="number" class="form-input" id="exaRetase" min="0" placeholder="0">
             </div>
             <div class="form-group">
-              <label class="form-label">Retase (Full)</label>
+              <label class="form-label">Retase Full (Opsional)</label>
               <input type="number" class="form-input" id="exaRetaseFull" min="0" placeholder="0">
             </div>
             <div class="form-group">
@@ -1228,14 +1229,15 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Nama Sopir</label>
-              <input type="text" class="form-input" id="roda10Sopir" placeholder="Nama sopir">
+              <input type="text" class="form-input" id="roda10Sopir" list="roda10List" placeholder="Nama sopir">
+            <datalist id="roda10List"></datalist>
             </div>
             <div class="form-group">
-              <label class="form-label">Jml Retase</label>
+              <label class="form-label">Jml Retase (Opsional)</label>
               <input type="number" class="form-input" id="roda10Retase" min="0" placeholder="0">
             </div>
             <div class="form-group">
-              <label class="form-label">Retase (Full)</label>
+              <label class="form-label">Retase Full (Opsional)</label>
               <input type="number" class="form-input" id="roda10RetaseFull" min="0" placeholder="0">
             </div>
             <div class="form-group">
@@ -1374,28 +1376,59 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
     <!-- TAB: DAFTAR SOPIR -->
     <div class="tab-panel" id="panel-sopir">
-      <div class="card">
-        <div class="card-title">Tambah Sopir & Plat</div>
-        <div class="form-row">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+        <!-- Card 1: Air Masuk -->
+        <div class="card" style="margin:0">
+          <div class="card-title">Sopir Air Masuk</div>
           <div class="form-group">
-            <label class="form-label">Nama Sopir</label>
-            <input type="text" class="form-input" id="masterSopir" placeholder="Contoh: Budi">
+            <input type="text" class="form-input" id="masterSopir" placeholder="Nama Sopir">
           </div>
           <div class="form-group">
-            <label class="form-label">Nomor Plat</label>
-            <input type="text" class="form-input" id="masterPlat" placeholder="Contoh: DT 1234 XX">
+            <input type="text" class="form-input" id="masterPlat" placeholder="Nomor Plat">
+          </div>
+          <button class="btn btn-primary" onclick="addMasterSopir()" style="width:100%; margin-bottom:20px;">Simpan</button>
+          
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Plat</th><th>Aksi</th></tr></thead>
+              <tbody id="masterSopirTable"></tbody>
+            </table>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="addMasterSopir()" style="width:100%; margin-top:10px;">Simpan Sopir</button>
-      </div>
 
-      <div class="card" style="margin-top:20px">
-        <div class="card-title">Daftar Sopir Tersimpan</div>
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead><tr><th>Nama</th><th>Plat</th><th>Aksi</th></tr></thead>
-            <tbody id="masterSopirTable"></tbody>
-          </table>
+        <!-- Card 2: Exca -->
+        <div class="card" style="margin:0">
+          <div class="card-title">Alat & Opr Exca</div>
+          <div class="form-group">
+            <input type="text" class="form-input" id="masterOprExca" placeholder="Nama Operator">
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-input" id="masterAlatExca" placeholder="Nama Alat (Cth: Exca 01)">
+          </div>
+          <button class="btn btn-primary" onclick="addMasterExca()" style="width:100%; margin-bottom:20px;">Simpan</button>
+          
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Operator</th><th>Alat</th><th>Aksi</th></tr></thead>
+              <tbody id="masterExcaTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card 3: 10 Roda -->
+        <div class="card" style="margin:0">
+          <div class="card-title">Sopir 10 Roda</div>
+          <div class="form-group">
+            <input type="text" class="form-input" id="masterNamaRoda10" placeholder="Nama Sopir">
+          </div>
+          <button class="btn btn-primary" onclick="addMasterRoda10()" style="width:100%; margin-bottom:20px;">Simpan</button>
+          
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+              <tbody id="masterRoda10Table"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1457,17 +1490,114 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     };
 
     let masterSopir = [];
+    let masterExca = [];
+    let masterRoda10 = [];
 
-    async function saveMasterSopir() {
+    async function loadMasterData() {
+      try {
+        const res = await fetch('/api/getMaster');
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) {
+            masterSopir = raw;
+          } else if (raw && typeof raw === 'object') {
+            masterSopir = raw.sopir || [];
+            masterExca = raw.exca || [];
+            masterRoda10 = raw.roda10 || [];
+          }
+        }
+      } catch(e) { console.error('Failed to load master', e); }
+      renderMasterSopir();
+      renderMasterExca();
+      renderMasterRoda10();
+    }
+
+    async function saveMasterData() {
       try {
         await fetch('/api/saveMaster', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: masterSopir })
+          body: JSON.stringify({ data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10 } })
         });
+        showToast('Master Karyawan/Unit tersimpan!', 'success');
       } catch (e) {
         console.error('Failed to save master', e);
-        showToast('Gagal menyimpan master sopir ke database!', 'error');
+        showToast('Gagal menyimpan master ke database!', 'error');
+      }
+    }
+    
+    // For backwards compatibility with old button onclick
+    async function saveMasterSopir() {
+      await saveMasterData();
+    }
+
+    
+    function renderMasterExca() {
+      const tbody = document.getElementById('masterExcaTable');
+      if(!tbody) return;
+      tbody.innerHTML = '';
+      masterExca.forEach((item, i) => {
+        tbody.innerHTML += `<tr>
+          <td>${item.operator}</td>
+          <td>${item.alat}</td>
+          <td><button class="delete-btn" onclick="deleteMasterExca(${i})">✕</button></td>
+        </tr>`;
+      });
+      // Update Datalist
+      const dlAlat = document.getElementById('alatList');
+      const dlOpr = document.getElementById('oprList');
+      if(dlAlat) dlAlat.innerHTML = [...new Set(masterExca.map(x => x.alat))].map(a => `<option value="${a}">`).join('');
+      if(dlOpr) dlOpr.innerHTML = [...new Set(masterExca.map(x => x.operator))].map(o => `<option value="${o}">`).join('');
+    }
+
+    function addMasterExca() {
+      const operator = document.getElementById('masterOprExca').value.trim();
+      const alat = document.getElementById('masterAlatExca').value.trim();
+      if (!operator) { showToast('Isi nama operator!', 'error'); return; }
+      masterExca.push({ operator, alat });
+      document.getElementById('masterOprExca').value = '';
+      document.getElementById('masterAlatExca').value = '';
+      renderMasterExca();
+      saveMasterData();
+    }
+    
+    function deleteMasterExca(idx) {
+      if(confirm('Hapus operator exca ini?')) {
+        masterExca.splice(idx, 1);
+        renderMasterExca();
+        saveMasterData();
+      }
+    }
+
+    function renderMasterRoda10() {
+      const tbody = document.getElementById('masterRoda10Table');
+      if(!tbody) return;
+      tbody.innerHTML = '';
+      masterRoda10.forEach((item, i) => {
+        tbody.innerHTML += `<tr>
+          <td>${item.nama}</td>
+          <td><button class="delete-btn" onclick="deleteMasterRoda10(${i})">✕</button></td>
+        </tr>`;
+      });
+      // Update Datalist
+      const dl = document.getElementById('roda10List');
+      if(dl) dl.innerHTML = masterRoda10.map(x => `<option value="${x.nama}">`).join('');
+    }
+
+    function addMasterRoda10() {
+      const nama = document.getElementById('masterNamaRoda10').value.trim();
+      if (!nama) { showToast('Isi nama sopir 10 roda!', 'error'); return; }
+      masterRoda10.push({ nama });
+      document.getElementById('masterNamaRoda10').value = '';
+      renderMasterRoda10();
+      saveMasterData();
+    }
+    
+    function deleteMasterRoda10(idx) {
+      if(confirm('Hapus sopir ini?')) {
+        masterRoda10.splice(idx, 1);
+        renderMasterRoda10();
+        saveMasterData();
       }
     }
 
@@ -1573,8 +1703,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       }
     }
 
-    function init() {
-      renderMasterSopir();
+    async function init() {
+      await loadMasterData();
+      
       const today = new Date();
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -1582,13 +1713,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       currentDate = `${yyyy}-${mm}-${dd}`;
       document.getElementById('currentDate').value = currentDate;
 
-      // Set default waktu
       const hh = String(today.getHours()).padStart(2, '0');
       const min = String(today.getMinutes()).padStart(2, '0');
       const timeInputs = document.querySelectorAll('input[type="time"]');
       timeInputs.forEach(i => i.value = `${hh}:${min}`);
 
-      loadData();
+      await loadData();
       renderAll();
     }
 
@@ -1662,27 +1792,70 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       hideLoading();
     }
 
-    function loadData() {
-      const stored = localStorage.getItem(getStorageKey());
-      if (stored) {
-        data = JSON.parse(stored);
-      } else {
-        data = {
-          stockPrev: { jirgen: 0, liter: 0 },
-          masuk: [],
-          loader: [],
-          exa: [],
-          roda10: [],
-          pabrik: []
-        };
+    async 
+    document.addEventListener('DOMContentLoaded', () => {
+      const exaOpr = document.getElementById('exaOperator');
+      if (exaOpr) {
+        exaOpr.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = e.target.value.toLowerCase().trim();
+            if(!val) return;
+            const found = masterExca.find(x => x.operator.toLowerCase().startsWith(val));
+            if(found) {
+              e.target.value = found.operator;
+              document.getElementById('exaAlat').value = found.alat;
+              document.getElementById('exaInput').focus();
+            }
+          }
+        });
       }
-      // Populate stock prev inputs
-      document.getElementById('stockPrevInput').value = (data.stockPrev.liter ? data.stockPrev.jirgen + '.' + data.stockPrev.liter : data.stockPrev.jirgen) || '';
+
+      const roda10Sopir = document.getElementById('roda10Sopir');
+      if (roda10Sopir) {
+        roda10Sopir.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = e.target.value.toLowerCase().trim();
+            if(!val) return;
+            const found = masterRoda10.find(x => x.nama.toLowerCase().startsWith(val));
+            if(found) {
+              e.target.value = found.nama;
+              document.getElementById('roda10Input').focus();
+            }
+          }
+        });
+      }
+    });
+
+    function loadData() {
+      showLoading('Memuat Data...');
+      try {
+        const res = await fetch('/api/getData?date=' + currentDate);
+        if (res.ok) {
+          const fetchedData = await res.json();
+          if (fetchedData && fetchedData.stockPrev) {
+            data = fetchedData;
+          } else {
+            data = { stockPrev: { jirgen: 0, liter: 0 }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load data', e);
+        showToast('Gagal memuat data dari database!', 'error');
+        // Fallback to empty state
+        data = { stockPrev: { jirgen: 0, liter: 0 }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
+      }
+      
+      const prevJir = data.stockPrev.jirgen || 0;
+      const prevLit = data.stockPrev.liter || 0;
+      document.getElementById('stockPrevInput').value = (prevLit ? prevJir + '.' + prevLit : (prevJir ? prevJir : ''));
+      hideLoading();
     }
 
-    function handleDateChange() {
+    async function handleDateChange() {
       currentDate = document.getElementById('currentDate').value;
-      loadData();
+      await loadData();
       renderAll();
     }
 
@@ -1776,11 +1949,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     function addLoader() {
       let operator = document.getElementById('loaderOperator').value;
-      const operatorNew = document.getElementById('loaderOperatorNew').value.trim();
-      if (operator && operatorNew) {
-        operator = operator + ' (Opr ' + operatorNew + ')';
-      } else if (operatorNew) {
-        operator = operatorNew;
+      const isCadangan = document.getElementById('loaderOprCadangan') ? document.getElementById('loaderOprCadangan').checked : false;
+      if (operator && isCadangan) {
+        operator = operator + ' (Opr Daniel)';
+      } else if (!operator && isCadangan) {
+        operator = 'Daniel';
       }
 
       const hmIsi = document.getElementById('loaderHmIsi').value;
@@ -1798,7 +1971,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
       // Reset
       document.getElementById('loaderOperator').value = '';
-      document.getElementById('loaderOperatorNew').value = '';
+      if (document.getElementById('loaderOprCadangan')) document.getElementById('loaderOprCadangan').checked = false;
       document.getElementById('loaderHmIsi').value = '';
       document.getElementById('loaderHmPrev').value = '';
       document.getElementById('loaderInput').value = '';
@@ -1823,8 +1996,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const hmIsi = document.getElementById('exaHmIsi').value;
       const hmPrev = document.getElementById('exaHmPrev').value;
       const waktu = document.getElementById('exaWaktu').value;
-      const retase = parseInt(document.getElementById('exaRetase').value) || 0;
-      const retaseFull = parseInt(document.getElementById('exaRetaseFull').value) || 0;
+      const retVal = document.getElementById('exaRetase').value;
+      const retase = retVal !== '' ? parseInt(retVal) : '';
+      const retFullVal = document.getElementById('exaRetaseFull').value;
+      const retaseFull = retFullVal !== '' ? parseInt(retFullVal) : '';
       const {jirgen, liter} = parseInput('exaInput');
       const {jirgen: jirgenFull, liter: literFull} = parseInput('exaInputFull');
 
@@ -1863,8 +2038,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     function addRoda10() {
       const sopir = document.getElementById('roda10Sopir').value.trim();
-      const retase = parseInt(document.getElementById('roda10Retase').value) || 0;
-      const retaseFull = parseInt(document.getElementById('roda10RetaseFull').value) || 0;
+      const retVal = document.getElementById('roda10Retase').value;
+      const retase = retVal !== '' ? parseInt(retVal) : '';
+      const retFullVal = document.getElementById('roda10RetaseFull').value;
+      const retaseFull = retFullVal !== '' ? parseInt(retFullVal) : '';
       const {jirgen, liter} = parseInput('roda10Input');
       const {jirgen: jirgenFull, liter: literFull} = parseInput('roda10InputFull');
 
@@ -2318,7 +2495,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         let totalLoaderLiters = 0;
         data.loader.forEach((item, i) => {
           if (i < 3) {
-            const row = 17 + i;
+            const row = 9 + i;
             const liters = toTotalLiters(item.jirgen, item.liter);
             totalLoaderLiters += liters;
             wsKeluar.getCell('A' + row).value = i + 1;
@@ -2329,12 +2506,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             wsKeluar.getCell('F' + row).value = formatJirgenLiter(item.jirgen, item.liter);
           }
         });
-        wsKeluar.getCell('F20').value = formatFromLiters(totalLoaderLiters);
+        wsKeluar.getCell('F12').value = formatFromLiters(totalLoaderLiters);
 
         let totalPabrikLiters = 0;
         data.pabrik.forEach((item, i) => {
           if (i < 5) {
-            const row = 17 + i;
+            const row = 9 + i;
             const liters = toTotalLiters(item.jirgen, item.liter);
             totalPabrikLiters += liters;
             wsKeluar.getCell('I' + row).value = i + 1;
@@ -2342,12 +2519,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             wsKeluar.getCell('K' + row).value = formatJirgenLiter(item.jirgen, item.liter);
           }
         });
-        wsKeluar.getCell('K22').value = formatFromLiters(totalPabrikLiters);
+        wsKeluar.getCell('K14').value = formatFromLiters(totalPabrikLiters);
 
         let totalExaLiters = 0;
         data.exa.forEach((item, i) => {
           if (i < 5) {
-            const row = 27 + i;
+            const row = 19 + i;
             const liters = toTotalLiters(item.jirgen, item.liter);
             totalExaLiters += liters;
             wsKeluar.getCell('A' + row).value = i + 1;
@@ -2363,12 +2540,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             wsKeluar.getCell('K' + row).value = formatJirgenLiter(item.jirgenFull, item.literFull);
           }
         });
-        wsKeluar.getCell('J32').value = formatFromLiters(totalExaLiters);
+        wsKeluar.getCell('J24').value = formatFromLiters(totalExaLiters);
 
         let totalRoda10Liters = 0;
         data.roda10.forEach((item, i) => {
           if (i < 4) {
-            const row = 38 + i;
+            const row = 30 + i;
             const liters = toTotalLiters(item.jirgen, item.liter);
             totalRoda10Liters += liters;
             wsKeluar.getCell('A' + row).value = i + 1;
@@ -2379,7 +2556,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             wsKeluar.getCell('F' + row).value = formatJirgenLiter(item.jirgenFull, item.literFull);
           }
         });
-        wsKeluar.getCell('E42').value = formatFromLiters(totalRoda10Liters);
+        wsKeluar.getCell('E34').value = formatFromLiters(totalRoda10Liters);
 
         const bufKeluarOut = await wbKeluar.xlsx.writeBuffer();
         
