@@ -993,16 +993,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         <div class="card-title">
           <span class="emoji">📦</span> Stock Air Sebelumnya
         </div>
-        <div class="form-grid two-col-mobile" style="margin-bottom:0">
-          <div class="form-group">
-            <label class="form-label">Jirgen</label>
-            <input type="number" class="form-input" id="stockPrevJirgen" min="0" placeholder="0" oninput="updateStockPrev()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Liter (MAX 35)</label>
-            <input type="number" class="form-input" id="stockPrevLiter" min="0" max="35" placeholder="0" oninput="updateStockPrev()">
-          </div>
-        </div>
+        <div class="form-group" style="margin-bottom:0">
+     <label class="form-label">Jumlah Air</label>
+     <input type="number" step="any" class="form-input" id="stockPrevInput" min="0" placeholder="Contoh: 2 atau 2.15" oninput="updateStockPrev()">
+     <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
+   </div>
       </div>
 
       <!-- Form input solar masuk -->
@@ -1026,16 +1021,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           </div>
           <div class="form-group">
             <label class="form-label">Nama Sopir</label>
-            <input type="text" class="form-input" id="masukSopir" placeholder="Nama sopir">
+            <input type="text" class="form-input" id="masukSopir" list="sopirList" placeholder="Nama sopir">
+            <datalist id="sopirList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">Jumlah Air</label>
-            <div class="jirgen-input-group">
-              <input type="number" class="form-input" id="masukJirgen" min="0" placeholder="0">
-              <span class="jirgen-separator">.</span>
-              <input type="number" class="form-input" id="masukLiter" min="0" max="35" placeholder="0">
-            </div>
-            <span class="jirgen-hint">Jirgen . Liter (max 35L/jirgen)</span>
+   <input type="number" step="any" class="form-input" id="masukInput" min="0" placeholder="Contoh: 2 atau 2.15">
+   <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
           </div>
         </div>
         <button class="btn btn-primary btn-block" onclick="addMasuk()">
@@ -1402,8 +1394,36 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         </ul>
       </div>
 
-    </div>
+        </div>
 
+    <!-- TAB: DAFTAR SOPIR -->
+    <div class="tab-panel" id="panel-sopir">
+      <div class="card">
+        <div class="card-title">Tambah Sopir & Plat</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nama Sopir</label>
+            <input type="text" class="form-input" id="masterSopir" placeholder="Contoh: Budi">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nomor Plat</label>
+            <input type="text" class="form-input" id="masterPlat" placeholder="Contoh: DT 1234 XX">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addMasterSopir()" style="width:100%; margin-top:10px;">Simpan Sopir</button>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">Daftar Sopir Tersimpan</div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Nama</th><th>Plat</th><th>Aksi</th></tr></thead>
+            <tbody id="masterSopirTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  
   </div>
 
   <!-- ============================================
@@ -1681,8 +1701,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         };
       }
       // Populate stock prev inputs
-      document.getElementById('stockPrevJirgen').value = data.stockPrev.jirgen || '';
-      document.getElementById('stockPrevLiter').value = data.stockPrev.liter || '';
+      document.getElementById('stockPrevInput').value = (data.stockPrev.liter ? data.stockPrev.jirgen + '.' + data.stockPrev.liter : data.stockPrev.jirgen) || '';
     }
 
     function handleDateChange() {
@@ -1743,8 +1762,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('masukLokasi').value = '';
       document.getElementById('masukPlat').value = '';
       document.getElementById('masukSopir').value = '';
-      document.getElementById('masukJirgen').value = '';
-      document.getElementById('masukLiter').value = '';
+      document.getElementById('masukInput').value = '';
 
       showToast(`Data masuk ditambahkan: ${formatJirgenLiter(jirgen, liter)} jirgen`, 'success');
     }
@@ -1784,8 +1802,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('loaderOperatorNew').value = '';
       document.getElementById('loaderHmIsi').value = '';
       document.getElementById('loaderHmPrev').value = '';
-      document.getElementById('loaderJirgen').value = '';
-      document.getElementById('loaderLiter').value = '';
+      document.getElementById('loaderInput').value = '';
 
       showToast(`Loader: ${operator} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
     }
@@ -1831,10 +1848,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('exaHmPrev').value = '';
       document.getElementById('exaRetase').value = '';
       document.getElementById('exaRetaseFull').value = '';
-      document.getElementById('exaJirgen').value = '';
-      document.getElementById('exaLiter').value = '';
-      document.getElementById('exaJirgenFull').value = '';
-      document.getElementById('exaLiterFull').value = '';
+      document.getElementById('exaInput').value = ''; document.getElementById('exaInputFull').value = '';
 
       showToast(`Exa: ${alat} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
     }
@@ -1871,10 +1885,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('roda10Sopir').value = '';
       document.getElementById('roda10Retase').value = '';
       document.getElementById('roda10RetaseFull').value = '';
-      document.getElementById('roda10Jirgen').value = '';
-      document.getElementById('roda10Liter').value = '';
-      document.getElementById('roda10JirgenFull').value = '';
-      document.getElementById('roda10LiterFull').value = '';
+      document.getElementById('roda10Input').value = ''; document.getElementById('roda10InputFull').value = '';
 
       showToast(`10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
     }
@@ -1905,8 +1916,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
       // Reset
       document.getElementById('pabrikPeruntukan').value = '';
-      document.getElementById('pabrikJirgen').value = '';
-      document.getElementById('pabrikLiter').value = '';
+      document.getElementById('pabrikInput').value = '';
 
       showToast(`Pabrik: ${peruntukan} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
     }
@@ -2195,6 +2205,19 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     // TOAST NOTIFICATIONS
     // ============================================
+    
+    function parseInput(id) {
+      const el = document.getElementById(id);
+      if(!el) return { jirgen: 0, liter: 0 };
+      const str = el.value.toString().trim();
+      if(!str) return { jirgen: 0, liter: 0 };
+      if(str.includes('.')) {
+        const parts = str.split('.');
+        return { jirgen: parseInt(parts[0]) || 0, liter: parseInt(parts[1]) || 0 };
+      }
+      return { jirgen: parseInt(str) || 0, liter: 0 };
+    }
+
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
