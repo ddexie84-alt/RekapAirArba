@@ -943,6 +943,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       <button class="main-tab" onclick="switchMainTab('ringkasan')" id="tab-ringkasan">
         <span class="tab-icon">📊</span> Ringkasan
       </button>
+      <button class="main-tab" onclick="switchMainTab('sopir')" id="tab-sopir">
+        <span class="tab-icon">👤</span> Daftar Sopir
+      </button>
     </div>
   </header>
 
@@ -996,8 +999,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             <input type="number" class="form-input" id="stockPrevJirgen" min="0" placeholder="0" oninput="updateStockPrev()">
           </div>
           <div class="form-group">
-            <label class="form-label">Liter (max 34)</label>
-            <input type="number" class="form-input" id="stockPrevLiter" min="0" max="34" placeholder="0" oninput="updateStockPrev()">
+            <label class="form-label">Liter (MAX 35)</label>
+            <input type="number" class="form-input" id="stockPrevLiter" min="0" max="35" placeholder="0" oninput="updateStockPrev()">
           </div>
         </div>
       </div>
@@ -1537,6 +1540,43 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     // INITIALIZATION
     // ============================================
+    
+    document.getElementById('masuk-sopir').addEventListener('input', function(e) {
+      const val = e.target.value.toLowerCase();
+      const found = masterSopir.find(x => x.nama.toLowerCase() === val);
+      if(found) {
+        document.getElementById('masuk-plat').value = found.plat;
+      }
+    });
+
+    
+    async function addMasterSopir() {
+      const nama = document.getElementById('masterSopir').value.trim();
+      const plat = document.getElementById('masterPlat').value.trim();
+      if(!nama) return showToast('Nama harus diisi!', 'warning');
+      
+      const existing = masterSopir.find(x => x.nama.toLowerCase() === nama.toLowerCase());
+      if(existing) {
+        existing.plat = plat;
+      } else {
+        masterSopir.push({ nama, plat });
+      }
+      
+      await saveMasterSopir();
+      renderMasterSopir();
+      document.getElementById('masterSopir').value = '';
+      document.getElementById('masterPlat').value = '';
+      showToast('Sopir berhasil disimpan', 'success');
+    }
+
+    async function deleteMasterSopir(i) {
+      if(confirm('Hapus sopir ini?')) {
+        masterSopir.splice(i, 1);
+        await saveMasterSopir();
+        renderMasterSopir();
+      }
+    }
+
     function init() {
       renderMasterSopir();
       const today = new Date();
@@ -1596,7 +1636,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       return `${jirgen}.${liter}`;
     }
 
-    // Validate liter input (max 34, since 35 = 1 full jirgen)
+    // Validate liter input (MAX 35, since 35 = 1 full jirgen)
     function validateLiterInput(input) {
       let val = parseInt(input.value) || 0;
       if (val < 0) val = 0;
@@ -1911,7 +1951,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
         <td colspan="4" style="text-align:right">JUMLAH</td>
-        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong> <span style="font-size:10px;color:var(--text-muted)">(${totalLiters} L)</span></td>
+        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
       </tr>`;
 
@@ -1951,7 +1991,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
         <td colspan="5" style="text-align:right">JUMLAH</td>
-        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong> <span style="font-size:10px;color:var(--text-muted)">(${totalLiters} L)</span></td>
+        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
       </tr>`;
 
@@ -1996,7 +2036,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
         <td colspan="9" style="text-align:right">JUMLAH</td>
-        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong> <span style="font-size:10px;color:var(--text-muted)">(${totalLiters} L)</span></td>
+        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
         <td></td>
       </tr>`;
@@ -2037,7 +2077,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
         <td colspan="4" style="text-align:right">JUMLAH</td>
-        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong> <span style="font-size:10px;color:var(--text-muted)">(${totalLiters} L)</span></td>
+        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
         <td></td>
       </tr>`;
@@ -2075,7 +2115,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
         <td colspan="2" style="text-align:right">JUMLAH</td>
-        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong> <span style="font-size:10px;color:var(--text-muted)">(${totalLiters} L)</span></td>
+        <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
       </tr>`;
 
@@ -2142,7 +2182,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('sumSelisihDetail').textContent = `liter`;
       document.getElementById('sumSelisihVal').className = `summary-value ${selisih >= 0 ? '' : 'negative'}`;
 
-      document.getElementById('sumStockVal').textContent = `${formatFromLiters(stockAkhir)}`;
+      document.getElementById('sumStockVal').textContent = `${formatFromLiters(stockAkhir)} (${stockAkhir} liter)`; document.getElementById('sumStockDetail').style.display='none';
       document.getElementById('sumStockDetail').textContent = `(${stockAkhir} liter)`;
 
       // Breakdown
