@@ -14,6 +14,20 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
 </script>
   <style>
+    
+    #loadingOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15,23,42,0.8); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: white; font-weight: bold;
+    }
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.3); border-radius: 50%;
+      border-top: 4px solid var(--primary); width: 40px; height: 40px;
+      animation: spin 1s linear infinite; margin-bottom: 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     /* ============================================
        CSS DESIGN SYSTEM
        ============================================ */
@@ -897,6 +911,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 </head>
 <body>
 
+  <div id="loadingOverlay" style="display: none;">
+    <div class="spinner"></div>
+    <div id="loadingText">Menghubungkan ke Database...</div>
+  </div>
+
+
   <!-- ============================================
        HEADER
        ============================================ -->
@@ -1418,6 +1438,15 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // ============================================
     // STATE MANAGEMENT
     // ============================================
+    
+    function showLoading(text = 'Menghubungkan ke Database...') {
+      document.getElementById('loadingText').innerText = text;
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
     let currentDate = '';
     let data = {
       stockPrev: { jirgen: 0, liter: 0 },
@@ -1428,10 +1457,19 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       pabrik: []
     };
 
-    let masterSopir = JSON.parse(localStorage.getItem('solar_master_sopir')) || [];
+    let masterSopir = [];
 
-    function saveMasterSopir() {
-      localStorage.setItem('solar_master_sopir', JSON.stringify(masterSopir));
+    async function saveMasterSopir() {
+      try {
+        await fetch('/api/saveMaster', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: masterSopir })
+        });
+      } catch (e) {
+        console.error('Failed to save master', e);
+        showToast('Gagal menyimpan master sopir ke database!', 'error');
+      }
     }
 
     function renderMasterSopir() {
@@ -1573,8 +1611,19 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       return `solar_${currentDate}`;
     }
 
-    function saveData() {
-      localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    async function saveData() {
+      showLoading('Menyimpan Data...');
+      try {
+        await fetch('/api/saveData', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: currentDate, data })
+        });
+      } catch (e) {
+        console.error('Failed to save data', e);
+        showToast('Gagal menyimpan ke database!', 'error');
+      }
+      hideLoading();
     }
 
     function loadData() {
@@ -2127,8 +2176,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('confirmModal').classList.remove('active');
     }
 
-    function clearAllData() {
-      localStorage.removeItem(getStorageKey());
+    async function clearAllData() {
       data = {
         stockPrev: { jirgen: 0, liter: 0 },
         masuk: [],
@@ -2139,6 +2187,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       };
       document.getElementById('stockPrevJirgen').value = '';
       document.getElementById('stockPrevLiter').value = '';
+      await saveData();
       renderAll();
       closeModal();
       showToast('Semua data telah dihapus', 'info');
