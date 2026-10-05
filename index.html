@@ -1827,7 +1827,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       }
     });
 
-    function loadData() {
+    async function loadData() {
       showLoading('Memuat Data...');
       try {
         const res = await fetch('/api/getData?date=' + currentDate);
