@@ -1553,8 +1553,17 @@ async function loadMasterData() {
       try {
         const res = await fetch('/api/getMaster?t=' + new Date().getTime());
         if (res.ok) {
-          let raw = await res.text();
-          try { raw = JSON.parse(raw); } catch(e) {}
+let raw = await res.text();
+          if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
+          let parseAttempts = 0;
+          while (typeof raw === 'string' && parseAttempts < 3) {
+            try { 
+              raw = JSON.parse(raw); 
+            } catch(e) { 
+              break; 
+            }
+            parseAttempts++;
+          }
           
           if (Array.isArray(raw)) {
             masterSopir = raw;
@@ -1563,7 +1572,6 @@ async function loadMasterData() {
             masterExca = raw.exca || [];
             masterRoda10 = raw.roda10 || [];
           } else {
-            // Unrecognized format
             masterSopir = []; masterExca = []; masterRoda10 = [];
           }
         } else {
@@ -2979,9 +2987,16 @@ async function saveMasterData() {
       try {
         const res = await fetch('/api/getMaster?force=' + Math.random());
         if (res.ok) {
-          let raw = await res.text();
-          alert("Data asli dari server Vercel:\n" + raw);
-          try { raw = JSON.parse(raw); } catch(e) {}
+let raw = await res.text();
+          if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
+          let initialRaw = raw;
+          let parseAttempts = 0;
+          while (typeof raw === 'string' && parseAttempts < 3) {
+            try { raw = JSON.parse(raw); } catch(e) { break; }
+            parseAttempts++;
+          }
+          alert("Data asli dari server Vercel:\n" + initialRaw + "\n\nTipe setelah di-parse: " + (typeof raw) + (Array.isArray(raw) ? " (Array)" : ""));
+          
           if (Array.isArray(raw)) {
             masterSopir = raw;
           } else if (raw && typeof raw === 'object') {
