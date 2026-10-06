@@ -1717,33 +1717,6 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       });
     }
 
-    function addMasterSopir() {
-      const nama = document.getElementById('masterSopir').value.trim();
-      const plat = document.getElementById('masterPlat').value.trim();
-      if(!nama) return showToast('Nama harus diisi!', 'warning');
-      
-      const existing = masterSopir.find(x => x.nama.toLowerCase() === nama.toLowerCase());
-      if(existing) {
-        existing.plat = plat;
-      } else {
-        masterSopir.push({ nama, plat });
-      }
-      
-      saveMasterSopir();
-      renderMasterSopir();
-      document.getElementById('masterSopir').value = '';
-      document.getElementById('masterPlat').value = '';
-      showToast('Sopir berhasil disimpan', 'success');
-    }
-
-    function deleteMasterSopir(i) {
-      if(confirm('Hapus sopir ini?')) {
-        masterSopir.splice(i, 1);
-        saveMasterSopir();
-        renderMasterSopir();
-      }
-    }
-
     document.getElementById('masukSopir').addEventListener('input', function(e) {
       const val = e.target.value.toLowerCase();
       const found = masterSopir.find(x => x.nama.toLowerCase() === val);
