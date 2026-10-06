@@ -7,7 +7,7 @@ const kv = createClient({
 
 function toTotalLiters(jirgen, liter) {
   jirgen = parseInt(jirgen) || 0;
-  liter = parseInt(liter) || 0;
+  liter = parseFloat(String(liter).replace(',', '.')) || 0;
   return (jirgen * 35) + liter;
 }
 

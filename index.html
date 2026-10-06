@@ -1027,7 +1027,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         </div>
         <div class="form-group" style="margin-bottom:0">
      <label class="form-label">Jumlah Air</label>
-     <input type="number" step="any" class="form-input" id="stockPrevInput" min="0" placeholder="Contoh: 2 atau 2.15" oninput="updateStockPrev()">
+     <input type="text" inputmode="text" class="form-input" id="stockPrevInput" min="0" placeholder="Contoh: 2 atau 2.15" oninput="updateStockPrev()">
      <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
    </div>
       </div>
@@ -1058,7 +1058,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           </div>
           <div class="form-group">
             <label class="form-label">Jumlah Air</label>
-   <input type="number" step="any" class="form-input" id="masukInput" min="0" placeholder="Contoh: 2 atau 2.15">
+   <input type="text" inputmode="text" class="form-input" id="masukInput" min="0" placeholder="Contoh: 2 atau 2.15">
    <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
           </div>
         </div>
@@ -1148,7 +1148,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <input type="number" step="any" class="form-input" id="loaderInput" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="loaderInput" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
           </div>
@@ -1214,12 +1214,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <input type="number" step="any" class="form-input" id="exaInput" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="exaInput" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air (Full)</label>
-              <input type="number" step="any" class="form-input" id="exaInputFull" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="exaInputFull" min="0" placeholder="Contoh: 2 atau 2.15">
               <span class="jirgen-hint">Jirgen . Liter</span>
             </div>
           </div>
@@ -1274,12 +1274,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <input type="number" step="any" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air (Full)</label>
-              <input type="number" step="any" class="form-input" id="roda10InputFull" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="roda10InputFull" min="0" placeholder="Contoh: 2 atau 2.15">
               <span class="jirgen-hint">Jirgen . Liter</span>
             </div>
           </div>
@@ -1320,7 +1320,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
-              <input type="number" step="any" class="form-input" id="pabrikInput" min="0" placeholder="Contoh: 2 atau 2.15">
+              <input type="text" inputmode="text" class="form-input" id="pabrikInput" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
           </div>
@@ -1840,7 +1840,7 @@ async function saveMasterData() {
     // Convert jirgen.liter to total liters
     function toTotalLiters(jirgen, liter) {
       jirgen = parseInt(jirgen) || 0;
-      liter = parseInt(liter) || 0;
+      liter = parseFloat(String(liter).replace(',', '.')) || 0;
       return (jirgen * 35) + liter;
     }
 
@@ -2426,8 +2426,7 @@ async function saveMasterData() {
       const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
       if (newJumlah === null) return;
       let j = 0, l = 0;
-      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
-      else { j = parseInt(newJumlah)||0; }
+      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
       if (!newOpr.trim()) { showToast('Operator tidak boleh kosong!', 'error'); return; }
       data.loader[idx].operator = newOpr.trim();
       data.loader[idx].waktu = newWaktu.trim();
@@ -2451,8 +2450,7 @@ async function saveMasterData() {
       const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
       if (newJumlah === null) return;
       let j = 0, l = 0;
-      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
-      else { j = parseInt(newJumlah)||0; }
+      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
       if (!newAlat.trim()) { showToast('Nama alat tidak boleh kosong!', 'error'); return; }
       data.exa[idx].alat = newAlat.trim();
       data.exa[idx].operator = newOpr.trim();
@@ -2473,8 +2471,7 @@ async function saveMasterData() {
       const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
       if (newJumlah === null) return;
       let j = 0, l = 0;
-      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
-      else { j = parseInt(newJumlah)||0; }
+      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
       if (!newSopir.trim()) { showToast('Nama sopir tidak boleh kosong!', 'error'); return; }
       data.roda10[idx].sopir = newSopir.trim();
       data.roda10[idx].jirgen = j;
@@ -2493,8 +2490,7 @@ async function saveMasterData() {
       const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
       if (newJumlah === null) return;
       let j = 0, l = 0;
-      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
-      else { j = parseInt(newJumlah)||0; }
+      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
       if (!newPeruntukan.trim()) { showToast('Peruntukan tidak boleh kosong!', 'error'); return; }
       data.pabrik[idx].peruntukan = newPeruntukan.trim();
       data.pabrik[idx].jirgen = j;
@@ -2783,16 +2779,26 @@ async function saveMasterData() {
     // TOAST NOTIFICATIONS
     // ============================================
     
+    function parseJumlahStr(str) {
+      if(!str) return { jirgen: 0, liter: 0 };
+      str = str.toString().trim();
+      const firstDotIdx = str.indexOf('.');
+      if (firstDotIdx !== -1) {
+        const jStr = str.substring(0, firstDotIdx);
+        let lStr = str.substring(firstDotIdx + 1);
+        lStr = lStr.replace(',', '.'); // allow comma as decimal inside liter
+        return { 
+          jirgen: parseInt(jStr) || 0, 
+          liter: parseFloat(lStr) || 0 
+        };
+      }
+      return { jirgen: parseInt(str) || 0, liter: 0 };
+    }
+
     function parseInput(id) {
       const el = document.getElementById(id);
       if(!el) return { jirgen: 0, liter: 0 };
-      const str = el.value.toString().trim();
-      if(!str) return { jirgen: 0, liter: 0 };
-      if(str.includes('.')) {
-        const parts = str.split('.');
-        return { jirgen: parseInt(parts[0]) || 0, liter: parseInt(parts[1]) || 0 };
-      }
-      return { jirgen: parseInt(str) || 0, liter: 0 };
+      return parseJumlahStr(el.value);
     }
 
     function showToast(message, type = 'info') {
