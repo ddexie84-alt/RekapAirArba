@@ -2022,15 +2022,9 @@ async function saveMasterData() {
     // ============================================
     function updateStockPrev() {
       const raw = document.getElementById('stockPrevInput').value;
-      let j = 0, l = 0;
-      if (raw && raw.includes('.')) {
-        const parts = raw.split('.');
-        j = parseInt(parts[0]) || 0;
-        l = parseInt(parts[1]) || 0;
-      } else {
-        j = parseInt(raw) || 0;
-      }
-      data.stockPrev = { jirgen: j, liter: Math.min(l, 34) };
+      const parsed = parseJumlahStr(raw);
+      // We clamp liter up to 34.99... realistically just use Math.min
+      data.stockPrev = { jirgen: parsed.jirgen, liter: Math.min(parsed.liter, 34.99) };
       saveData();
       updateSummary();
     }
