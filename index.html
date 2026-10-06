@@ -1542,7 +1542,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
     async function loadMasterData() {
       try {
-        const res = await fetch('/api/getMaster');
+        const res = await fetch('/api/getMaster?t=' + new Date().getTime());
         if (res.ok) {
           const raw = await res.json();
           if (Array.isArray(raw)) {
@@ -1893,16 +1893,59 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       }
     });
 
+
+    async function findPreviousStockLiters(dateStr) {
+      let d = new Date(dateStr);
+      // Look back up to 7 days
+      for (let i = 1; i <= 7; i++) {
+        d.setDate(d.getDate() - 1);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const prevDateStr = `${yyyy}-${mm}-${dd}`;
+        
+        try {
+          const res = await fetch('/api/getData?date=' + prevDateStr + '&t=' + new Date().getTime());
+          if (res.ok) {
+            const fetchedData = await res.json();
+            if (fetchedData && fetchedData.stockPrev) {
+              // Calculate stock akhir for this date
+              const prevLiters = toTotalLiters(fetchedData.stockPrev.jirgen, fetchedData.stockPrev.liter);
+              
+              let totalMasuk = 0;
+              (fetchedData.masuk || []).forEach(item => totalMasuk += toTotalLiters(item.jirgen, item.liter));
+              
+              let totalKeluar = 0;
+              (fetchedData.loader || []).forEach(item => totalKeluar += toTotalLiters(item.jirgen, item.liter));
+              (fetchedData.exa || []).forEach(item => totalKeluar += toTotalLiters(item.jirgen, item.liter));
+              (fetchedData.roda10 || []).forEach(item => totalKeluar += toTotalLiters(item.jirgen, item.liter));
+              (fetchedData.pabrik || []).forEach(item => totalKeluar += toTotalLiters(item.jirgen, item.liter));
+              
+              return prevLiters + totalMasuk - totalKeluar;
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching prev date', prevDateStr, e);
+        }
+      }
+      return 0;
+    }
+
     async function loadData() {
       showLoading('Memuat Data...');
       try {
-        const res = await fetch('/api/getData?date=' + currentDate);
+        const res = await fetch('/api/getData?date=' + currentDate + '&t=' + new Date().getTime());
         if (res.ok) {
           const fetchedData = await res.json();
           if (fetchedData && fetchedData.stockPrev) {
             data = fetchedData;
           } else {
-            data = { stockPrev: { jirgen: 0, liter: 0 }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
+            showLoading('Mencari sisa air hari sebelumnya...');
+            const prevLiters = await findPreviousStockLiters(currentDate);
+            const prevJL = fromTotalLiters(prevLiters);
+            data = { stockPrev: { jirgen: prevJL.jirgen, liter: prevJL.liter }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
+            saveData(); // Auto save initial stock for the new day
+            showToast('Sisa air hari sebelumnya otomatis diisi', 'success');
           }
         }
       } catch (e) {
@@ -2001,7 +2044,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
     async function loadHistory() {
       try {
-        const res = await fetch('/api/getData?date=history_log');
+        const res = await fetch('/api/getData?date=history_log&t=' + new Date().getTime());
         if (res.ok) {
           const fetched = await res.json();
           if (Array.isArray(fetched)) {
