@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
+  <!-- ANTI CACHE BROWSER -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Pencatatan Solar - PT. Arba Tritama Persada</title>
@@ -1412,6 +1418,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="form-group">
             <input type="text" class="form-input" id="masterPlat" placeholder="Nomor Plat">
           </div>
+          
+          <button class="btn" style="width:100%; margin-bottom:20px; background: #6c757d; color: white;" onclick="forceReloadMaster()">🔄 Paksa Muat Ulang Data Karyawan (Anti-Cache)</button>
+
           <button class="btn btn-primary" onclick="addMasterSopir()" style="width:100%; margin-bottom:20px;">Simpan</button>
           
           <div class="table-wrapper">
@@ -2965,6 +2974,33 @@ async function saveMasterData() {
     // ============================================
     renderMasterSopir();
     init();
+
+    async function forceReloadMaster() {
+      try {
+        const res = await fetch('/api/getMaster?force=' + Math.random());
+        if (res.ok) {
+          let raw = await res.text();
+          alert("Data asli dari server Vercel:\n" + raw);
+          try { raw = JSON.parse(raw); } catch(e) {}
+          if (Array.isArray(raw)) {
+            masterSopir = raw;
+          } else if (raw && typeof raw === 'object') {
+            masterSopir = raw.sopir || [];
+            masterExca = raw.exca || [];
+            masterRoda10 = raw.roda10 || [];
+          }
+          renderMasterSopir();
+          renderMasterExca();
+          renderMasterRoda10();
+          showToast('Data berhasil dimuat ulang!', 'success');
+        } else {
+          alert('Error Server: ' + res.status);
+        }
+      } catch (e) {
+        alert('Network Error: ' + e.message);
+      }
+    }
+
   </script>
 </body>
 </html>
