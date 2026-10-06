@@ -182,6 +182,29 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       cursor: pointer;
     }
 
+    
+    /* History styles */
+    .history-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .history-icon.masuk { background: rgba(16,185,129,0.15); }
+    .history-icon.keluar { background: rgba(239,68,68,0.15); }
+    .history-icon.hapus { background: rgba(239,68,68,0.25); }
+    .history-body { flex: 1; min-width: 0; }
+    .history-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .history-detail { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .history-time { font-size: 11px; color: var(--accent); margin-top: 3px; font-weight: 500; }
+
     /* Main tabs */
     .main-tabs {
       display: flex;
@@ -946,6 +969,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       <button class="main-tab" onclick="switchMainTab('sopir')" id="tab-sopir">
         <span class="tab-icon">👤</span> Karyawan/Unit
       </button>
+      <button class="main-tab" onclick="switchMainTab('riwayat')" id="tab-riwayat">
+        <span class="tab-icon">📋</span> Riwayat
+      </button>
     </div>
   </header>
 
@@ -1435,6 +1461,27 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
   
   </div>
 
+
+    <!-- TAB: RIWAYAT -->
+    <div class="tab-panel" id="panel-riwayat">
+      <div class="card">
+        <div class="card-title"><span class="emoji">📋</span> Riwayat Transaksi</div>
+        <p style="color:var(--text-secondary); font-size:12px; margin-bottom:12px;">Semua aktivitas tercatat otomatis dengan waktu.</p>
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+          <button class="btn btn-info" onclick="filterHistory('semua')" style="font-size:12px; padding:6px 12px;">Semua</button>
+          <button class="btn btn-success" onclick="filterHistory('masuk')" style="font-size:12px; padding:6px 12px;">Air Masuk</button>
+          <button class="btn btn-primary" onclick="filterHistory('loader')" style="font-size:12px; padding:6px 12px;">Loader</button>
+          <button class="btn btn-primary" onclick="filterHistory('exa')" style="font-size:12px; padding:6px 12px;">Excavator</button>
+          <button class="btn btn-primary" onclick="filterHistory('roda10')" style="font-size:12px; padding:6px 12px;">10 Roda</button>
+          <button class="btn btn-primary" onclick="filterHistory('pabrik')" style="font-size:12px; padding:6px 12px;">Pabrik</button>
+          <button class="btn btn-danger" onclick="filterHistory('hapus')" style="font-size:12px; padding:6px 12px;">Hapus</button>
+        </div>
+        <div id="historyList" style="max-height:500px; overflow-y:auto;">
+          <p style="text-align:center; color:var(--text-secondary);">Belum ada riwayat.</p>
+        </div>
+      </div>
+    </div>
+
   <!-- ============================================
        EXPORT BAR (FIXED BOTTOM)
        ============================================ -->
@@ -1705,12 +1752,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
     async function init() {
       const today = new Date();
-      
-      
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      currentDate = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('currentDate').value = currentDate;
+
       await loadMasterData();
-      
-      // Removed duplicate today definition below
-      
 
       const hh = String(today.getHours()).padStart(2, '0');
       const min = String(today.getMinutes()).padStart(2, '0');
@@ -1718,6 +1766,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       timeInputs.forEach(i => i.value = `${hh}:${min}`);
 
       await loadData();
+      await loadHistory();
       renderAll();
     }
 
@@ -1933,6 +1982,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('masukInput').value = '';
 
       showToast(`Data masuk ditambahkan: ${formatJirgenLiter(jirgen, liter)} jirgen`, 'success');
+      addHistory('masuk', `Air Masuk: ${sopir} (${plat}) - ${formatJirgenLiter(jirgen, liter)} jirgen dari ${lokasi}`);
     }
 
     function deleteMasuk(index) {
@@ -1941,6 +1991,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       renderMasuk();
       updateSummary();
       showToast('Data masuk dihapus', 'info');
+      addHistory('hapus', 'Hapus data Air Masuk');
     }
 
     // ============================================
@@ -1976,6 +2027,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('loaderInput').value = '';
 
       showToast(`Loader: ${operator} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
+      addHistory('loader', `Loader: ${operator} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deleteLoader(index) {
@@ -1984,6 +2036,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       renderLoader();
       updateSummary();
       showToast('Data loader dihapus', 'info');
+      addHistory('hapus', 'Hapus data Loader');
     }
 
     // ============================================
@@ -2022,6 +2075,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('exaInput').value = ''; document.getElementById('exaInputFull').value = '';
 
       showToast(`Exa: ${alat} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
+      addHistory('exa', `Excavator: ${alat} (${operator}) - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deleteExa(index) {
@@ -2030,6 +2084,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       renderExa();
       updateSummary();
       showToast('Data excavator dihapus', 'info');
+      addHistory('hapus', 'Hapus data Excavator');
     }
 
     // ============================================
@@ -2059,6 +2114,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('roda10Input').value = ''; document.getElementById('roda10InputFull').value = '';
 
       showToast(`10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
+      addHistory('roda10', `10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deleteRoda10(index) {
@@ -2067,6 +2123,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       renderRoda10();
       updateSummary();
       showToast('Data 10 roda dihapus', 'info');
+      addHistory('hapus', 'Hapus data 10 Roda');
     }
 
     // ============================================
@@ -2089,6 +2146,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       document.getElementById('pabrikInput').value = '';
 
       showToast(`Pabrik: ${peruntukan} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
+      addHistory('pabrik', `Pabrik: ${peruntukan} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deletePabrik(index) {
@@ -2097,6 +2155,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       renderPabrik();
       updateSummary();
       showToast('Data pabrik dihapus', 'info');
+      addHistory('hapus', 'Hapus data Pabrik');
     }
 
     // ============================================
