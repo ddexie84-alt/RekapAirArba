@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Aplikasi Pencatatan Solar",
   "dependencies": {
-    "@vercel/kv": "^3.0.0"
+    "@vercel/kv": "^3.0.0",
+    "dotenv": "^18.0.5"
   }
 }

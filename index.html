@@ -1477,13 +1477,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         <div class="card-title"><span class="emoji">📋</span> Riwayat Transaksi</div>
         <p style="color:var(--text-secondary); font-size:12px; margin-bottom:12px;">Semua aktivitas tercatat otomatis dengan waktu.</p>
         <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-          <button class="btn btn-info" onclick="filterHistory('semua')" style="font-size:12px; padding:6px 12px;">Semua</button>
-          <button class="btn btn-success" onclick="filterHistory('masuk')" style="font-size:12px; padding:6px 12px;">Air Masuk</button>
-          <button class="btn btn-primary" onclick="filterHistory('loader')" style="font-size:12px; padding:6px 12px;">Loader</button>
-          <button class="btn btn-primary" onclick="filterHistory('exa')" style="font-size:12px; padding:6px 12px;">Excavator</button>
-          <button class="btn btn-primary" onclick="filterHistory('roda10')" style="font-size:12px; padding:6px 12px;">10 Roda</button>
-          <button class="btn btn-primary" onclick="filterHistory('pabrik')" style="font-size:12px; padding:6px 12px;">Pabrik</button>
-          <button class="btn btn-danger" onclick="filterHistory('hapus')" style="font-size:12px; padding:6px 12px;">Hapus</button>
+          <button class="btn btn-info" onclick="filterHistory('semua')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:1; transform:scale(1.05);">Semua</button>
+          <button class="btn btn-success" onclick="filterHistory('masuk')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Air Masuk</button>
+          <button class="btn btn-primary" onclick="filterHistory('loader')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Loader</button>
+          <button class="btn btn-primary" onclick="filterHistory('exa')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Excavator</button>
+          <button class="btn btn-primary" onclick="filterHistory('roda10')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">10 Roda</button>
+          <button class="btn btn-primary" onclick="filterHistory('pabrik')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Pabrik</button>
+          <button class="btn btn-danger" onclick="filterHistory('hapus')" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Hapus</button>
         </div>
         <div id="historyList" style="max-height:500px; overflow-y:auto;">
           <p style="text-align:center; color:var(--text-secondary);">Belum ada riwayat.</p>
@@ -2090,10 +2090,20 @@ async function saveMasterData() {
       renderHistory();
     }
 
-    function filterHistory(type) {
+    window.filterHistory = function(type) {
       historyFilter = type;
       renderHistory();
-    }
+      if (window.event && window.event.currentTarget) {
+        const btns = window.event.currentTarget.parentElement.querySelectorAll('button');
+        btns.forEach(b => {
+          b.style.opacity = '0.4';
+          b.style.transform = 'scale(0.95)';
+          b.style.transition = 'all 0.2s';
+        });
+        window.event.currentTarget.style.opacity = '1';
+        window.event.currentTarget.style.transform = 'scale(1.05)';
+      }
+    };
 
     function renderHistory() {
       const container = document.getElementById('historyList');
@@ -2753,8 +2763,10 @@ async function saveMasterData() {
       document.getElementById('sumKeluarVal').textContent = `${formatFromLiters(totalKeluar)}`;
       document.getElementById('sumKeluarDetail').textContent = `(${totalKeluar} liter)`;
 
-      document.getElementById('sumSelisihVal').textContent = `${selisih >= 0 ? '+' : ''}${selisih}`;
-      document.getElementById('sumSelisihDetail').textContent = `liter`;
+      const sign = selisih >= 0 ? '+' : '-';
+      const absSelisih = Math.abs(selisih);
+      document.getElementById('sumSelisihVal').textContent = `${sign}${formatFromLiters(absSelisih)}`;
+      document.getElementById('sumSelisihDetail').textContent = `(${sign}${absSelisih} liter)`;
       document.getElementById('sumSelisihVal').className = `summary-value ${selisih >= 0 ? '' : 'negative'}`;
 
       document.getElementById('sumStockVal').textContent = `${formatFromLiters(stockAkhir)} (${stockAkhir} liter)`; document.getElementById('sumStockDetail').style.display='none';
