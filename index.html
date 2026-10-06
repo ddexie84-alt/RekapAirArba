@@ -1540,39 +1540,52 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     let masterExca = [];
     let masterRoda10 = [];
 
-    async function loadMasterData() {
+async function loadMasterData() {
       try {
         const res = await fetch('/api/getMaster?t=' + new Date().getTime());
         if (res.ok) {
-          const raw = await res.json();
+          let raw = await res.text();
+          try { raw = JSON.parse(raw); } catch(e) {}
+          
           if (Array.isArray(raw)) {
             masterSopir = raw;
           } else if (raw && typeof raw === 'object') {
             masterSopir = raw.sopir || [];
             masterExca = raw.exca || [];
             masterRoda10 = raw.roda10 || [];
+          } else {
+            // Unrecognized format
+            masterSopir = []; masterExca = []; masterRoda10 = [];
           }
+        } else {
+          showToast('Gagal load master: ' + res.status, 'error');
         }
-      } catch(e) { console.error('Failed to load master', e); }
+      } catch(e) {
+        showToast('Error network load master', 'error');
+      }
       renderMasterSopir();
       renderMasterExca();
       renderMasterRoda10();
     }
 
-    async function saveMasterData() {
+async function saveMasterData() {
       try {
+        const payload = { data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10 } };
         const response = await fetch('/api/saveMaster', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10 } })
+          body: JSON.stringify(payload)
         });
+        
         if (!response.ok) {
-          throw new Error('API Error: ' + response.status);
+          const errText = await response.text();
+          throw new Error('API Error ' + response.status + ': ' + errText);
         }
         showToast('Master Karyawan/Unit tersimpan!', 'success');
       } catch (e) {
         console.error('Failed to save master', e);
-        showToast('Gagal menyimpan master ke database!', 'error');
+        showToast('Gagal Simpan: ' + e.message, 'error');
+        alert('DEBUG ERROR SIMPAN: ' + e.message); // Force popup so user definitely sees it
       }
     }
     
