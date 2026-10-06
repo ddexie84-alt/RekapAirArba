@@ -1561,11 +1561,14 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
     async function saveMasterData() {
       try {
-        await fetch('/api/saveMaster', {
+        const response = await fetch('/api/saveMaster', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10 } })
         });
+        if (!response.ok) {
+          throw new Error('API Error: ' + response.status);
+        }
         showToast('Master Karyawan/Unit tersimpan!', 'success');
       } catch (e) {
         console.error('Failed to save master', e);
