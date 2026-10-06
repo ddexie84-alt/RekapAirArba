@@ -2983,6 +2983,41 @@ async function saveMasterData() {
     renderMasterSopir();
     init();
 
+
+    async function forceReloadMasterSilent() {
+      try {
+        const res = await fetch('/api/getMaster?force=' + Math.random());
+        if (res.ok) {
+          let raw = await res.text();
+          if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
+          let parseAttempts = 0;
+          while (typeof raw === 'string' && parseAttempts < 3) {
+            try { raw = JSON.parse(raw); } catch(e) { break; }
+            parseAttempts++;
+          }
+          if (Array.isArray(raw)) {
+            masterSopir = raw;
+          } else if (raw && typeof raw === 'object') {
+            masterSopir = raw.sopir || [];
+            masterExca = raw.exca || [];
+            masterRoda10 = raw.roda10 || [];
+          }
+          renderMasterSopir();
+          renderMasterExca();
+          renderMasterRoda10();
+        }
+      } catch (e) {
+        // silent
+      }
+    }
+
+    // Auto trigger on full page load and as a delayed fallback
+    window.addEventListener('load', () => {
+      forceReloadMasterSilent();
+      setTimeout(forceReloadMasterSilent, 1000);
+      setTimeout(forceReloadMasterSilent, 3000);
+    });
+
     async function forceReloadMaster() {
       try {
         const res = await fetch('/api/getMaster?force=' + Math.random());
