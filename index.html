@@ -1587,7 +1587,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         tbody.innerHTML += `<tr>
           <td>${item.operator}</td>
           <td>${item.alat}</td>
-          <td><button class="delete-btn" onclick="deleteMasterExca(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterExca(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterExca(${i})">Hapus</button></td>
         </tr>`;
       });
       // Update Datalist
@@ -1623,7 +1623,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       masterRoda10.forEach((item, i) => {
         tbody.innerHTML += `<tr>
           <td>${item.nama}</td>
-          <td><button class="delete-btn" onclick="deleteMasterRoda10(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterRoda10(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterRoda10(${i})">Hapus</button></td>
         </tr>`;
       });
       // Update Datalist
@@ -1648,6 +1648,50 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       }
     }
 
+
+    // ============================================
+    // EDIT MASTER DATA
+    // ============================================
+    function editMasterSopir(idx) {
+      const item = masterSopir[idx];
+      if (!item) return;
+      const newNama = prompt('Edit nama sopir:', item.nama);
+      if (newNama === null) return; // cancelled
+      const newPlat = prompt('Edit nomor plat:', item.plat);
+      if (newPlat === null) return;
+      if (!newNama.trim()) { showToast('Nama tidak boleh kosong!', 'error'); return; }
+      masterSopir[idx] = { nama: newNama.trim(), plat: newPlat.trim() };
+      renderMasterSopir();
+      saveMasterData();
+      showToast('Data sopir berhasil diubah!', 'success');
+    }
+
+    function editMasterExca(idx) {
+      const item = masterExca[idx];
+      if (!item) return;
+      const newOpr = prompt('Edit nama operator:', item.operator);
+      if (newOpr === null) return;
+      const newAlat = prompt('Edit nama alat:', item.alat);
+      if (newAlat === null) return;
+      if (!newOpr.trim()) { showToast('Nama operator tidak boleh kosong!', 'error'); return; }
+      masterExca[idx] = { operator: newOpr.trim(), alat: newAlat.trim() };
+      renderMasterExca();
+      saveMasterData();
+      showToast('Data operator exca berhasil diubah!', 'success');
+    }
+
+    function editMasterRoda10(idx) {
+      const item = masterRoda10[idx];
+      if (!item) return;
+      const newNama = prompt('Edit nama sopir 10 roda:', item.nama);
+      if (newNama === null) return;
+      if (!newNama.trim()) { showToast('Nama tidak boleh kosong!', 'error'); return; }
+      masterRoda10[idx] = { nama: newNama.trim() };
+      renderMasterRoda10();
+      saveMasterData();
+      showToast('Data sopir 10 roda berhasil diubah!', 'success');
+    }
+
     function renderMasterSopir() {
       const tbody = document.getElementById('masterSopirTable');
       if(!tbody) return;
@@ -1661,7 +1705,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         tr.innerHTML = `
           <td>${item.nama}</td>
           <td>${item.plat}</td>
-          <td><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;" onclick="deleteMasterSopir(${i})">Hapus</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterSopir(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterSopir(${i})">Hapus</button></td>
         `;
         tbody.appendChild(tr);
 
@@ -1928,11 +1972,115 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     // STOCK SEBELUMNYA
     // ============================================
     function updateStockPrev() {
-      const j = parseInt(document.getElementById('stockPrevJirgen').value) || 0;
-      const l = parseInt(document.getElementById('stockPrevLiter').value) || 0;
+      const raw = document.getElementById('stockPrevInput').value;
+      let j = 0, l = 0;
+      if (raw && raw.includes('.')) {
+        const parts = raw.split('.');
+        j = parseInt(parts[0]) || 0;
+        l = parseInt(parts[1]) || 0;
+      } else {
+        j = parseInt(raw) || 0;
+      }
       data.stockPrev = { jirgen: j, liter: Math.min(l, 34) };
       saveData();
       updateSummary();
+    }
+
+
+    // ============================================
+    // HISTORY / RIWAYAT
+    // ============================================
+    let historyData = [];
+    let historyFilter = 'semua';
+
+    function addHistory(type, desc) {
+      const now = new Date();
+      const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][now.getDay()];
+      const tgl = String(now.getDate()).padStart(2,'0');
+      const bln = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][now.getMonth()];
+      const thn = now.getFullYear();
+      const jam = String(now.getHours()).padStart(2,'0');
+      const mnt = String(now.getMinutes()).padStart(2,'0');
+      
+      historyData.unshift({
+        type: type,
+        desc: desc,
+        date: hari + ', ' + tgl + ' ' + bln + ' ' + thn,
+        time: jam + ':' + mnt,
+        ts: now.getTime()
+      });
+      
+      if (historyData.length > 200) historyData.length = 200;
+      
+      saveHistory();
+      renderHistory();
+    }
+
+    async function saveHistory() {
+      try {
+        await fetch('/api/saveData', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: 'history_log', data: historyData })
+        });
+      } catch(e) { console.error('Failed to save history', e); }
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/getData?date=history_log');
+        if (res.ok) {
+          const fetched = await res.json();
+          if (Array.isArray(fetched)) {
+            historyData = fetched;
+          } else {
+            historyData = [];
+          }
+        }
+      } catch(e) { console.error('Failed to load history', e); historyData = []; }
+      renderHistory();
+    }
+
+    function filterHistory(type) {
+      historyFilter = type;
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyList');
+      if (!container) return;
+      
+      let items = historyData;
+      if (historyFilter !== 'semua') {
+        items = historyData.filter(function(h) { return h.type === historyFilter; });
+      }
+      
+      if (items.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:20px 0;">Belum ada riwayat.</p>';
+        return;
+      }
+      
+      var out = '';
+      items.forEach(function(h) {
+        var icon = '📥';
+        var iconClass = 'masuk';
+        if (h.type === 'masuk') { icon = '📥'; iconClass = 'masuk'; }
+        else if (h.type === 'loader') { icon = '🚜'; iconClass = 'keluar'; }
+        else if (h.type === 'exa') { icon = '⛏️'; iconClass = 'keluar'; }
+        else if (h.type === 'roda10') { icon = '🚛'; iconClass = 'keluar'; }
+        else if (h.type === 'pabrik') { icon = '🏭'; iconClass = 'keluar'; }
+        else if (h.type === 'hapus') { icon = '🗑️'; iconClass = 'hapus'; }
+        
+        out += '<div class="history-item">' +
+          '<div class="history-icon ' + iconClass + '">' + icon + '</div>' +
+          '<div class="history-body">' +
+            '<div class="history-title">' + h.desc + '</div>' +
+            '<div class="history-time">🕐 ' + h.date + ' • ' + h.time + '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      
+      container.innerHTML = out;
     }
 
     // ============================================
@@ -1983,6 +2131,52 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
       showToast(`Data masuk ditambahkan: ${formatJirgenLiter(jirgen, liter)} jirgen`, 'success');
       addHistory('masuk', `Air Masuk: ${sopir} (${plat}) - ${formatJirgenLiter(jirgen, liter)} jirgen dari ${lokasi}`);
+    }
+
+
+    function editMasuk(idx) {
+      const item = data.masuk[idx];
+      if (!item) return;
+
+      const newLokasi = prompt('Edit lokasi (Tambang/Pabrik/Genset):', item.lokasi);
+      if (newLokasi === null) return;
+
+      const newPlat = prompt('Edit nomor plat:', item.plat);
+      if (newPlat === null) return;
+
+      const newSopir = prompt('Edit nama sopir:', item.sopir);
+      if (newSopir === null) return;
+
+      const currentJL = formatJirgenLiter(item.jirgen, item.liter);
+      const newJumlah = prompt('Edit jumlah (cth: 3 atau 2.15):', currentJL);
+      if (newJumlah === null) return;
+
+      // Parse jumlah
+      let jirgen = 0, liter = 0;
+      if (newJumlah.includes('.')) {
+        const parts = newJumlah.split('.');
+        jirgen = parseInt(parts[0]) || 0;
+        liter = parseInt(parts[1]) || 0;
+      } else {
+        jirgen = parseInt(newJumlah) || 0;
+      }
+
+      if (!newLokasi.trim()) { showToast('Lokasi tidak boleh kosong!', 'error'); return; }
+      if (!newSopir.trim()) { showToast('Nama sopir tidak boleh kosong!', 'error'); return; }
+
+      data.masuk[idx] = {
+        lokasi: newLokasi.trim(),
+        plat: newPlat.trim().toUpperCase(),
+        sopir: newSopir.trim(),
+        jirgen: jirgen,
+        liter: liter
+      };
+
+      saveData();
+      renderMasuk();
+      updateSummary();
+      showToast('Data air masuk berhasil diubah!', 'success');
+      addHistory('masuk', 'Edit Air Masuk: ' + newSopir.trim() + ' (' + newPlat.trim() + ') - ' + formatJirgenLiter(jirgen, liter) + ' jirgen');
     }
 
     function deleteMasuk(index) {
@@ -2158,6 +2352,99 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       addHistory('hapus', 'Hapus data Pabrik');
     }
 
+
+    // ============================================
+    // EDIT DATA FUNCTIONS
+    // ============================================
+    function editLoader(idx) {
+      const item = data.loader[idx];
+      if (!item) return;
+      const newOpr = prompt('Edit operator:', item.operator);
+      if (newOpr === null) return;
+      const newWaktu = prompt('Edit waktu isi (HH:MM):', item.waktu || '');
+      if (newWaktu === null) return;
+      const curJL = formatJirgenLiter(item.jirgen, item.liter);
+      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
+      if (newJumlah === null) return;
+      let j = 0, l = 0;
+      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
+      else { j = parseInt(newJumlah)||0; }
+      if (!newOpr.trim()) { showToast('Operator tidak boleh kosong!', 'error'); return; }
+      data.loader[idx].operator = newOpr.trim();
+      data.loader[idx].waktu = newWaktu.trim();
+      data.loader[idx].jirgen = j;
+      data.loader[idx].liter = l;
+      saveData(); renderLoader(); updateSummary();
+      showToast('Data loader berhasil diubah!', 'success');
+      addHistory('loader', 'Edit Loader: ' + newOpr.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+    }
+
+    function editExa(idx) {
+      const item = data.exa[idx];
+      if (!item) return;
+      const newAlat = prompt('Edit nama alat:', item.alat || '');
+      if (newAlat === null) return;
+      const newOpr = prompt('Edit operator:', item.operator || '');
+      if (newOpr === null) return;
+      const newWaktu = prompt('Edit waktu isi (HH:MM):', item.waktu || '');
+      if (newWaktu === null) return;
+      const curJL = formatJirgenLiter(item.jirgen, item.liter);
+      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
+      if (newJumlah === null) return;
+      let j = 0, l = 0;
+      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
+      else { j = parseInt(newJumlah)||0; }
+      if (!newAlat.trim()) { showToast('Nama alat tidak boleh kosong!', 'error'); return; }
+      data.exa[idx].alat = newAlat.trim();
+      data.exa[idx].operator = newOpr.trim();
+      data.exa[idx].waktu = newWaktu.trim();
+      data.exa[idx].jirgen = j;
+      data.exa[idx].liter = l;
+      saveData(); renderExa(); updateSummary();
+      showToast('Data excavator berhasil diubah!', 'success');
+      addHistory('exa', 'Edit Exca: ' + newAlat.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+    }
+
+    function editRoda10(idx) {
+      const item = data.roda10[idx];
+      if (!item) return;
+      const newSopir = prompt('Edit nama sopir:', item.sopir || '');
+      if (newSopir === null) return;
+      const curJL = formatJirgenLiter(item.jirgen, item.liter);
+      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
+      if (newJumlah === null) return;
+      let j = 0, l = 0;
+      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
+      else { j = parseInt(newJumlah)||0; }
+      if (!newSopir.trim()) { showToast('Nama sopir tidak boleh kosong!', 'error'); return; }
+      data.roda10[idx].sopir = newSopir.trim();
+      data.roda10[idx].jirgen = j;
+      data.roda10[idx].liter = l;
+      saveData(); renderRoda10(); updateSummary();
+      showToast('Data 10 roda berhasil diubah!', 'success');
+      addHistory('roda10', 'Edit 10 Roda: ' + newSopir.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+    }
+
+    function editPabrik(idx) {
+      const item = data.pabrik[idx];
+      if (!item) return;
+      const newPeruntukan = prompt('Edit peruntukan:', item.peruntukan || '');
+      if (newPeruntukan === null) return;
+      const curJL = formatJirgenLiter(item.jirgen, item.liter);
+      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
+      if (newJumlah === null) return;
+      let j = 0, l = 0;
+      if (newJumlah.includes('.')) { const p = newJumlah.split('.'); j = parseInt(p[0])||0; l = parseInt(p[1])||0; }
+      else { j = parseInt(newJumlah)||0; }
+      if (!newPeruntukan.trim()) { showToast('Peruntukan tidak boleh kosong!', 'error'); return; }
+      data.pabrik[idx].peruntukan = newPeruntukan.trim();
+      data.pabrik[idx].jirgen = j;
+      data.pabrik[idx].liter = l;
+      saveData(); renderPabrik(); updateSummary();
+      showToast('Data pabrik berhasil diubah!', 'success');
+      addHistory('pabrik', 'Edit Pabrik: ' + newPeruntukan.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+    }
+
     // ============================================
     // RENDER TABLES
     // ============================================
@@ -2183,7 +2470,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <td><strong>${item.plat}</strong></td>
           <td>${item.sopir}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td><button class="delete-btn" onclick="deleteMasuk(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editMasuk(${i})">✏️</button><button class="delete-btn" onclick="deleteMasuk(${i})">✕</button></td>
         </tr>`;
       });
 
@@ -2223,7 +2510,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <td>${item.hmPrev || '-'}</td>
           <td>${item.waktu || '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td><button class="delete-btn" onclick="deleteLoader(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editLoader(${i})">✏️</button><button class="delete-btn" onclick="deleteLoader(${i})">✕</button></td>
         </tr>`;
       });
 
@@ -2268,7 +2555,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <td>${item.retaseFull || '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
           <td>${formatJirgenLiter(item.jirgenFull, item.literFull)}</td>
-          <td><button class="delete-btn" onclick="deleteExa(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editExa(${i})">✏️</button><button class="delete-btn" onclick="deleteExa(${i})">✕</button></td>
         </tr>`;
       });
 
@@ -2309,7 +2596,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <td>${item.retaseFull || '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
           <td>${formatJirgenLiter(item.jirgenFull, item.literFull)}</td>
-          <td><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
       });
 
@@ -2347,7 +2634,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <td class="row-num">${i + 1}</td>
           <td>${item.peruntukan}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td><button class="delete-btn" onclick="deletePabrik(${i})">✕</button></td>
+          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editPabrik(${i})">✏️</button><button class="delete-btn" onclick="deletePabrik(${i})">✕</button></td>
         </tr>`;
       });
 
@@ -2477,8 +2764,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         roda10: [],
         pabrik: []
       };
-      document.getElementById('stockPrevJirgen').value = '';
-      document.getElementById('stockPrevLiter').value = '';
+      document.getElementById('stockPrevInput').value = '';
       await saveData();
       renderAll();
       closeModal();
