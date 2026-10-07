@@ -1613,6 +1613,11 @@ let raw = await res.text();
           } else {
             masterSopir = []; masterExca = []; masterRoda10 = [];
           }
+          
+          // REFRESH UI
+          renderMasterSopir();
+          renderMasterExca();
+          renderMasterRoda10();
         } else {
           showToast('Gagal load master: ' + res.status, 'error');
         }
