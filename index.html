@@ -2051,6 +2051,17 @@ async function saveMasterData() {
       currentDate = document.getElementById('currentDate').value;
       await loadData();
       renderAll();
+      
+      // Auto-update HM Prev jika operator sudah terpilih di form
+      const loaderOpr = document.getElementById('loaderOperator').value;
+      if (loaderOpr) autofillHmPrev(loaderOpr, 'loaderHmPrev');
+      
+      const exaOprVal = document.getElementById('exaOperator').value.trim();
+      if (exaOprVal) {
+         const found = masterExca.find(x => (x.operator || '').toLowerCase().trim() === exaOprVal.toLowerCase());
+         if(found) autofillHmPrev(found.operator, 'exaHmPrev');
+         else autofillHmPrev(exaOprVal, 'exaHmPrev');
+      }
     }
 
     // ============================================
@@ -2361,7 +2372,7 @@ async function saveMasterData() {
         return;
       }
       
-      const currentDate = document.getElementById('datePicker').value;
+      const cDate = document.getElementById('currentDate').value;
       
       // 1. Cek apakah di hari yang SAMA sudah ada input untuk operator ini
       const todayList = [...(data.loader || []), ...(data.exa || [])]
@@ -2377,7 +2388,7 @@ async function saveMasterData() {
       if (data.hmHistory && data.hmHistory[operatorName]) {
         const history = data.hmHistory[operatorName];
         // filter data yang tanggalnya < tanggal yang dipilih saat ini
-        const past = history.filter(x => x.date < currentDate);
+        const past = history.filter(x => x.date < cDate);
         if (past.length > 0) {
           // Ambil yang paling terakhir (karena sudah di-sort ascending di backend)
           document.getElementById(inputElementId).value = past[past.length - 1].hm;
