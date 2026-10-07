@@ -90,44 +90,42 @@ export default async function handler(req, res) {
 
     // 6. Update operator HM History
     try {
-      let hmHistory = await kv.get('operator_hm_history');
-      if (!hmHistory) {
-        hmHistory = {};
-        if (allKeys.length > 0) {
-          const pastDataArray = await kv.mget(...allKeys);
-          allKeys.forEach((key, idx) => {
-            const pastData = pastDataArray[idx];
-            if (!pastData) return;
-            const kDate = key.replace('solar_data_', '');
-            [...(pastData.loader || []), ...(pastData.exa || [])].forEach(item => {
-               if (item.operator && item.hmIsi) {
-                  if (!hmHistory[item.operator]) hmHistory[item.operator] = [];
-                  hmHistory[item.operator].push({ date: kDate, hm: parseFloat(item.hmIsi) });
-               }
-            });
-          });
+      let hmHistory = {};
+      if (allKeys.length > 0) {
+        // Chunking mget to avoid Upstash 1000 keys limit
+        const chunkSize = 100;
+        let pastDataArray = [];
+        for (let i = 0; i < allKeys.length; i += chunkSize) {
+          const chunk = allKeys.slice(i, i + chunkSize);
+          const chunkData = await kv.mget(...chunk);
+          pastDataArray = pastDataArray.concat(chunkData);
         }
+        
+        allKeys.forEach((key, idx) => {
+          const pastData = pastDataArray[idx];
+          if (!pastData) return;
+          const kDate = key.replace('solar_data_', '');
+          [...(pastData.loader || []), ...(pastData.exa || [])].forEach(item => {
+             if (item.operator && item.hmIsi) {
+                if (!hmHistory[item.operator]) hmHistory[item.operator] = [];
+                // Only push if not already exists for this date to avoid duplicates
+                const existing = hmHistory[item.operator].find(e => e.date === kDate);
+                if (!existing) {
+                  hmHistory[item.operator].push({ date: kDate, hm: parseFloat(item.hmIsi) });
+                } else {
+                  existing.hm = Math.max(existing.hm, parseFloat(item.hmIsi));
+                }
+             }
+          });
+        });
       }
 
-      // Bersihkan data tanggal ini yang lama
+      // Sort dates
       Object.keys(hmHistory).forEach(opr => {
-        hmHistory[opr] = hmHistory[opr].filter(entry => entry.date !== date);
-      });
-
-      // Tambahkan data terbaru dari request (mencari HM paling tinggi di hari ini untuk tiap operator)
-      const todayMax = {};
-      [...(data.loader || []), ...(data.exa || [])].forEach(item => {
-         if (item.operator && item.hmIsi) {
-            todayMax[item.operator] = Math.max(todayMax[item.operator] || 0, parseFloat(item.hmIsi));
-         }
-      });
-
-      Object.keys(todayMax).forEach(opr => {
-         if (!hmHistory[opr]) hmHistory[opr] = [];
-         hmHistory[opr].push({ date, hm: todayMax[opr] });
-         // Sort date ascending
          hmHistory[opr].sort((a,b) => a.date.localeCompare(b.date));
       });
+
+
 
       await kv.set('operator_hm_history', hmHistory);
     } catch(err) {
