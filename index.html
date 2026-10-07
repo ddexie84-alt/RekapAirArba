@@ -1027,7 +1027,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         </div>
         <div class="form-group" style="margin-bottom:0">
      <label class="form-label">Jumlah Air</label>
-     <input type="text" inputmode="text" class="form-input" id="stockPrevInput" min="0" placeholder="Contoh: 2 atau 2.15" oninput="updateStockPrev()">
+     <input type="text" inputmode="text" class="form-input" id="stockPrevInput" min="0" placeholder="Contoh: 2 atau 2.15" onchange="updateStockPrev()">
      <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
    </div>
       </div>
@@ -1184,13 +1184,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🏗️</span> Tambah Air Keluar - Excavator</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nama Alat</label>
-              <input type="text" class="form-input" id="exaAlat" placeholder="contoh: PC200-8">
-            </div>
-            <div class="form-group">
               <label class="form-label">Nama Operator</label>
               <input type="text" class="form-input" id="exaOperator" list="oprList" placeholder="Nama operator">
             <datalist id="oprList"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Alat</label>
+              <input type="text" class="form-input" id="exaAlat" placeholder="contoh: PC200-8">
             </div>
             <div class="form-group">
               <label class="form-label">HM Saat Diisi (Opsional)</label>
@@ -1217,10 +1217,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="text" inputmode="text" class="form-input" id="exaInput" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
-            <div class="form-group">
-              <label class="form-label">Jumlah Air (Full)</label>
-              <input type="text" inputmode="text" class="form-input" id="exaInputFull" min="0" placeholder="Contoh: 2 atau 2.15">
-              <span class="jirgen-hint">Jirgen . Liter</span>
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="exaIsFull" style="width: 20px; height: 20px;">
+              <label for="exaIsFull" class="form-label" style="margin-bottom: 0;">Tandai sebagai Isi Full Tanki</label>
             </div>
           </div>
           <button class="btn btn-primary btn-block" onclick="addExa()">➕ Tambah</button>
@@ -1241,8 +1240,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                   <th>Ret.</th>
                   <th>Ret.F</th>
                   <th>Air</th>
-                  <th>Air F</th>
-                  <th></th>
+                  <th>Full Tanki</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="tbodyExa"></tbody>
@@ -1277,10 +1276,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
             </div>
-            <div class="form-group">
-              <label class="form-label">Jumlah Air (Full)</label>
-              <input type="text" inputmode="text" class="form-input" id="roda10InputFull" min="0" placeholder="Contoh: 2 atau 2.15">
-              <span class="jirgen-hint">Jirgen . Liter</span>
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;">
+              <label for="roda10IsFull" class="form-label" style="margin-bottom: 0;">Tandai sebagai Isi Full Tanki</label>
             </div>
           </div>
           <button class="btn btn-primary btn-block" onclick="addRoda10()">➕ Tambah</button>
@@ -1296,8 +1294,8 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                   <th>Ret.</th>
                   <th>Ret.F</th>
                   <th>Air</th>
-                  <th>Air F</th>
-                  <th></th>
+                  <th>Full Tanki</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="tbodyRoda10"></tbody>
@@ -1918,7 +1916,7 @@ async function saveMasterData() {
             e.preventDefault();
             const val = e.target.value.toLowerCase().trim();
             if(!val) return;
-            const found = masterExca.find(x => x.operator.toLowerCase().startsWith(val));
+            const found = masterExca.find(x => (x.operator || '').toLowerCase().trim().startsWith(val));
             if(found) {
               e.target.value = found.operator;
               document.getElementById('exaAlat').value = found.alat;
@@ -1929,7 +1927,7 @@ async function saveMasterData() {
         exaOpr.addEventListener('input', function(e) {
           const val = e.target.value.toLowerCase().trim();
           if(!val) return;
-          const found = masterExca.find(x => x.operator.toLowerCase() === val);
+          const found = masterExca.find(x => (x.operator || '').toLowerCase().trim() === val);
           if(found) {
             document.getElementById('exaAlat').value = found.alat;
           }
@@ -2017,7 +2015,8 @@ async function saveMasterData() {
       
       const prevJir = data.stockPrev.jirgen || 0;
       const prevLit = data.stockPrev.liter || 0;
-      document.getElementById('stockPrevInput').value = (prevLit ? prevJir + '.' + prevLit : (prevJir ? prevJir : ''));
+      const displayLit = prevLit ? prevLit.toString().replace('.', ',') : '';
+      document.getElementById('stockPrevInput').value = displayLit ? `${prevJir}.${displayLit}` : prevJir.toString();
       hideLoading();
     }
 
@@ -2335,14 +2334,14 @@ async function saveMasterData() {
       const retFullVal = document.getElementById('exaRetaseFull').value;
       const retaseFull = retFullVal !== '' ? parseInt(retFullVal) : '';
       const {jirgen, liter} = parseInput('exaInput');
-      const {jirgen: jirgenFull, liter: literFull} = parseInput('exaInputFull');
+      const isFull = document.getElementById('exaIsFull').checked;
 
       if (!alat) { showToast('Isi nama alat!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
       const selisihHm = (parseFloat(hmIsi) || 0) - (parseFloat(hmPrev) || 0);
 
-      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, jirgen, liter, jirgenFull, literFull });
+      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, jirgen, liter, isFull });
       saveData();
       renderExa();
       updateSummary();
@@ -2354,7 +2353,7 @@ async function saveMasterData() {
       document.getElementById('exaHmPrev').value = '';
       document.getElementById('exaRetase').value = '';
       document.getElementById('exaRetaseFull').value = '';
-      document.getElementById('exaInput').value = ''; document.getElementById('exaInputFull').value = '';
+      document.getElementById('exaInput').value = ''; document.getElementById('exaIsFull').checked = false;
 
       showToast(`Exa: ${alat} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
       addHistory('exa', `Excavator: ${alat} (${operator}) - ${formatJirgenLiter(jirgen, liter)} jirgen`);
@@ -2379,12 +2378,12 @@ async function saveMasterData() {
       const retFullVal = document.getElementById('roda10RetaseFull').value;
       const retaseFull = retFullVal !== '' ? parseInt(retFullVal) : '';
       const {jirgen, liter} = parseInput('roda10Input');
-      const {jirgen: jirgenFull, liter: literFull} = parseInput('roda10InputFull');
+      const isFull = document.getElementById('roda10IsFull').checked;
 
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      data.roda10.push({ sopir, retase, retaseFull, jirgen, liter, jirgenFull, literFull });
+      data.roda10.push({ sopir, retase, retaseFull, jirgen, liter, isFull });
       saveData();
       renderRoda10();
       updateSummary();
@@ -2393,7 +2392,7 @@ async function saveMasterData() {
       document.getElementById('roda10Sopir').value = '';
       document.getElementById('roda10Retase').value = '';
       document.getElementById('roda10RetaseFull').value = '';
-      document.getElementById('roda10Input').value = ''; document.getElementById('roda10InputFull').value = '';
+      document.getElementById('roda10Input').value = ''; document.getElementById('roda10IsFull').checked = false;
 
       showToast(`10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
       addHistory('roda10', `10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
@@ -2638,7 +2637,7 @@ async function saveMasterData() {
           <td>${item.retase || '-'}</td>
           <td>${item.retaseFull || '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td>${formatJirgenLiter(item.jirgenFull, item.literFull)}</td>
+          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editExa(${i})">✏️</button><button class="delete-btn" onclick="deleteExa(${i})">✕</button></td>
         </tr>`;
       });
@@ -2679,7 +2678,7 @@ async function saveMasterData() {
           <td>${item.retase || '-'}</td>
           <td>${item.retaseFull || '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td>${formatJirgenLiter(item.jirgenFull, item.literFull)}</td>
+          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
       });
@@ -3073,8 +3072,9 @@ async function saveMasterData() {
             wsKeluar.getCell('G' + row).value = item.waktu;
             wsKeluar.getCell('H' + row).value = item.retase;
             wsKeluar.getCell('I' + row).value = item.retaseFull;
-            wsKeluar.getCell('J' + row).value = formatJirgenLiter(item.jirgen, item.liter);
-            wsKeluar.getCell('K' + row).value = formatJirgenLiter(item.jirgenFull, item.literFull);
+            const airText = formatJirgenLiter(item.jirgen, item.liter);
+            wsKeluar.getCell('J' + row).value = (item.isFull || (item.jirgenFull > 0 || item.literFull > 0)) ? `${airText} ( FULL )` : airText;
+            wsKeluar.getCell('K' + row).value = '';
           }
         });
         wsKeluar.getCell('J24').value = formatFromLiters(totalExaLiters);
@@ -3089,8 +3089,9 @@ async function saveMasterData() {
             wsKeluar.getCell('B' + row).value = item.sopir;
             wsKeluar.getCell('C' + row).value = item.retase;
             wsKeluar.getCell('D' + row).value = item.retaseFull;
-            wsKeluar.getCell('E' + row).value = formatJirgenLiter(item.jirgen, item.liter);
-            wsKeluar.getCell('F' + row).value = formatJirgenLiter(item.jirgenFull, item.literFull);
+            const airText = formatJirgenLiter(item.jirgen, item.liter);
+            wsKeluar.getCell('E' + row).value = (item.isFull || (item.jirgenFull > 0 || item.literFull > 0)) ? `${airText} ( FULL )` : airText;
+            wsKeluar.getCell('F' + row).value = '';
           }
         });
         wsKeluar.getCell('E34').value = formatFromLiters(totalRoda10Liters);
