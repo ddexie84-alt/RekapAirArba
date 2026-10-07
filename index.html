@@ -1188,7 +1188,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Nama Operator</label>
-              <input type="text" class="form-input" id="exaOperator" list="oprList" placeholder="Nama operator">
+              <input type="text" class="form-input" id="exaOperator" list="oprList" placeholder="Nama operator" oninput="handleExaAutoFill(event)" onchange="handleExaAutoFill(event)">
             <datalist id="oprList"></datalist>
             </div>
             <div class="form-group">
@@ -1863,6 +1863,26 @@ async function saveMasterData() {
       }
     }
 
+    // Auto fill for Exca
+    function handleExaAutoFill(e) {
+      const val = e.target.value.toLowerCase().trim();
+      if(!val) {
+        document.getElementById('exaAlat').value = '';
+        autofillHmPrev('', 'exaHmPrev');
+        return;
+      }
+      
+      const found = masterExca.find(x => (x.operator || '').toLowerCase().trim().startsWith(val));
+      if(found) {
+        document.getElementById('exaAlat').value = found.alat;
+        // Hanya auto-fill HM jika namanya match persis (atau biarkan startWith agar responsif)
+        autofillHmPrev(found.operator, 'exaHmPrev');
+      } else {
+        document.getElementById('exaAlat').value = '';
+        autofillHmPrev(e.target.value.trim(), 'exaHmPrev');
+      }
+    }
+
     async function init() {
       const today = new Date();
       const yyyy = today.getFullYear();
@@ -1970,25 +1990,8 @@ async function saveMasterData() {
             }
           }
         });
-        const exaAutoFill = (e) => {
-          const val = e.target.value.toLowerCase().trim();
-          if(!val) {
-            document.getElementById('exaAlat').value = '';
-            autofillHmPrev('', 'exaHmPrev');
-            return;
-          }
-          const found = masterExca.find(x => (x.operator || '').toLowerCase().trim().startsWith(val));
-          if(found) {
-            document.getElementById('exaAlat').value = found.alat;
-            // Hanya auto-fill HM jika namanya match persis (atau biarkan startWith agar responsif)
-            autofillHmPrev(found.operator, 'exaHmPrev');
-          } else {
-            document.getElementById('exaAlat').value = '';
-            autofillHmPrev(e.target.value.trim(), 'exaHmPrev');
-          }
-        };
-        exaOpr.addEventListener('input', exaAutoFill);
-        exaOpr.addEventListener('change', exaAutoFill);
+        exaOpr.addEventListener('input', handleExaAutoFill);
+        exaOpr.addEventListener('change', handleExaAutoFill);
       }
 
       const roda10Sopir = document.getElementById('roda10Sopir');
