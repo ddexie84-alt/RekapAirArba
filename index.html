@@ -1382,6 +1382,25 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         </div>
       </div>
 
+      <!-- Breakdown masuk -->
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-title"><span class="emoji">📥</span> Rincian Air Masuk</div>
+        <ul class="breakdown-list">
+          <li class="breakdown-item">
+            <span class="breakdown-name">🛢️ Ke Genset</span>
+            <span class="breakdown-value" id="bkMasukGenset">0</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="breakdown-name">⛏️ Ke Tambang</span>
+            <span class="breakdown-value" id="bkMasukTambang">0</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="breakdown-name">🏭 Ke Pabrik</span>
+            <span class="breakdown-value" id="bkMasukPabrik">0</span>
+          </li>
+        </ul>
+      </div>
+
       <!-- Breakdown keluar -->
       <div class="card">
         <div class="card-title"><span class="emoji">📊</span> Rincian Air Keluar</div>
@@ -2934,7 +2953,16 @@ async function saveMasterData() {
 
       // Total masuk
       let totalMasuk = 0;
-      data.masuk.forEach(item => { totalMasuk += toTotalLiters(item.jirgen, item.liter); });
+      let masukGenset = 0;
+      let masukTambang = 0;
+      let masukPabrik = 0;
+      data.masuk.forEach(item => { 
+        const lit = toTotalLiters(item.jirgen, item.liter);
+        totalMasuk += lit;
+        if ((item.lokasi || '').toLowerCase() === 'genset') masukGenset += lit;
+        else if ((item.lokasi || '').toLowerCase() === 'tambang') masukTambang += lit;
+        else if ((item.lokasi || '').toLowerCase() === 'pabrik') masukPabrik += lit;
+      });
 
       // Total keluar per category
       let totalLoader = 0;
@@ -2978,7 +3006,15 @@ async function saveMasterData() {
       document.getElementById('sumStockVal').textContent = `${formatFromLiters(stockAkhir)} (${stockAkhir} liter)`; document.getElementById('sumStockDetail').style.display='none';
       document.getElementById('sumStockDetail').textContent = `(${stockAkhir} liter)`;
 
-      // Breakdown
+      // Breakdown Masuk
+      const bkGensetEl = document.getElementById('bkMasukGenset');
+      if (bkGensetEl) bkGensetEl.textContent = `${formatFromLiters(masukGenset)}`;
+      const bkTambangEl = document.getElementById('bkMasukTambang');
+      if (bkTambangEl) bkTambangEl.textContent = `${formatFromLiters(masukTambang)}`;
+      const bkPabrikEl = document.getElementById('bkMasukPabrik');
+      if (bkPabrikEl) bkPabrikEl.textContent = `${formatFromLiters(masukPabrik)}`;
+
+      // Breakdown Keluar
       document.getElementById('bkLoader').textContent = `${formatFromLiters(totalLoader)}`;
       document.getElementById('bkExa').textContent = `${formatFromLiters(totalExa)}`;
       document.getElementById('bkRoda10').textContent = `${formatFromLiters(totalRoda10)}`;
