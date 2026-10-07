@@ -88,6 +88,52 @@ export default async function handler(req, res) {
       await kv.set(key, nextData);
     }
 
+    // 6. Update operator HM History
+    try {
+      let hmHistory = await kv.get('operator_hm_history');
+      if (!hmHistory) {
+        hmHistory = {};
+        if (allKeys.length > 0) {
+          const pastDataArray = await kv.mget(...allKeys);
+          allKeys.forEach((key, idx) => {
+            const pastData = pastDataArray[idx];
+            if (!pastData) return;
+            const kDate = key.replace('solar_data_', '');
+            [...(pastData.loader || []), ...(pastData.exa || [])].forEach(item => {
+               if (item.operator && item.hmIsi) {
+                  if (!hmHistory[item.operator]) hmHistory[item.operator] = [];
+                  hmHistory[item.operator].push({ date: kDate, hm: parseFloat(item.hmIsi) });
+               }
+            });
+          });
+        }
+      }
+
+      // Bersihkan data tanggal ini yang lama
+      Object.keys(hmHistory).forEach(opr => {
+        hmHistory[opr] = hmHistory[opr].filter(entry => entry.date !== date);
+      });
+
+      // Tambahkan data terbaru dari request (mencari HM paling tinggi di hari ini untuk tiap operator)
+      const todayMax = {};
+      [...(data.loader || []), ...(data.exa || [])].forEach(item => {
+         if (item.operator && item.hmIsi) {
+            todayMax[item.operator] = Math.max(todayMax[item.operator] || 0, parseFloat(item.hmIsi));
+         }
+      });
+
+      Object.keys(todayMax).forEach(opr => {
+         if (!hmHistory[opr]) hmHistory[opr] = [];
+         hmHistory[opr].push({ date, hm: todayMax[opr] });
+         // Sort date ascending
+         hmHistory[opr].sort((a,b) => a.date.localeCompare(b.date));
+      });
+
+      await kv.set('operator_hm_history', hmHistory);
+    } catch(err) {
+      console.error("Gagal update hm_history:", err);
+    }
+
     return res.status(200).json({ success: true, cascaded: subsequentKeys.length });
   } catch (error) {
     console.error(error);

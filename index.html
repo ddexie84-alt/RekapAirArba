@@ -1126,7 +1126,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Nama Operator</label>
-              <select class="form-input" id="loaderOperator">
+              <select class="form-input" id="loaderOperator" onchange="autofillHmPrev(this.value, 'loaderHmPrev')">
                 <option value="">Pilih / ketik...</option>
                 <option value="Maspur">Maspur</option>
                 <option value="Wandy">Wandy</option>
@@ -1952,6 +1952,9 @@ async function saveMasterData() {
           const found = masterExca.find(x => (x.operator || '').toLowerCase().trim() === val);
           if(found) {
             document.getElementById('exaAlat').value = found.alat;
+            autofillHmPrev(found.operator, 'exaHmPrev');
+          } else {
+            autofillHmPrev(e.target.value.trim(), 'exaHmPrev');
           }
         };
         exaOpr.addEventListener('input', exaAutoFill);
@@ -2348,6 +2351,42 @@ async function saveMasterData() {
       updateSummary();
       showToast('Data loader dihapus', 'info');
       addHistory('hapus', 'Hapus data Loader');
+    }
+
+    // Auto-fill HM Prev based on history
+    function autofillHmPrev(operatorName, inputElementId) {
+      if (!data) return;
+      if (!operatorName) {
+        document.getElementById(inputElementId).value = '';
+        return;
+      }
+      
+      const currentDate = document.getElementById('datePicker').value;
+      
+      // 1. Cek apakah di hari yang SAMA sudah ada input untuk operator ini
+      const todayList = [...(data.loader || []), ...(data.exa || [])]
+        .filter(x => x.operator === operatorName && x.hmIsi);
+      
+      if (todayList.length > 0) {
+        // Ambil HM Isi terakhir di hari ini
+        document.getElementById(inputElementId).value = todayList[todayList.length - 1].hmIsi;
+        return;
+      }
+      
+      // 2. Cek history dari hari-hari sebelumnya
+      if (data.hmHistory && data.hmHistory[operatorName]) {
+        const history = data.hmHistory[operatorName];
+        // filter data yang tanggalnya < tanggal yang dipilih saat ini
+        const past = history.filter(x => x.date < currentDate);
+        if (past.length > 0) {
+          // Ambil yang paling terakhir (karena sudah di-sort ascending di backend)
+          document.getElementById(inputElementId).value = past[past.length - 1].hm;
+        } else {
+          document.getElementById(inputElementId).value = '';
+        }
+      } else {
+        document.getElementById(inputElementId).value = '';
+      }
     }
 
     // ============================================

@@ -52,6 +52,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    const hmHistory = (await kv.get('operator_hm_history')) || {};
+
     const data = await kv.get(`solar_data_${date}`);
     if (!data) {
       // Find the most recent date BEFORE this date
@@ -79,9 +81,13 @@ export default async function handler(req, res) {
         loader: [],
         exa: [],
         roda10: [],
-        pabrik: []
+        pabrik: [],
+        hmHistory // Add hmHistory to response
       });
     }
+    
+    // Attach hmHistory to existing data
+    data.hmHistory = hmHistory;
     return res.status(200).json(data);
   } catch (error) {
     console.error(error);
