@@ -1262,13 +1262,45 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🚛</span> Tambah Air Keluar - 10 Roda</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Pilih Sopir</label>
+              <label class="form-label">Pilih Sopir (Ketik untuk filter otomatis)</label>
               <input type="text" class="form-input" id="roda10Sopir" list="roda10List" placeholder="Nama sopir">
               <datalist id="roda10List"></datalist>
             </div>
             
+            <!-- ============================== -->
+            <!-- EXCEL FEATURES -->
+            <!-- ============================== -->
+            <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0 15px 0;">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 15px; color: var(--text);">Kolom Fitur Excel (Pengeluaran Solar & Retase Biasa)</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Jml Retase (Opsional)</label>
+                <input type="number" class="form-input" id="roda10Retase" min="0" placeholder="0">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Retase Full (Opsional)</label>
+                <input type="number" class="form-input" id="roda10RetaseFull" min="0" placeholder="0">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Jumlah Air</label>
+                <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
+                 <span class="jirgen-hint" style="font-size: 10px;">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter</span>
+              </div>
+              <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom:0;">
+                <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;">
+                <label for="roda10IsFull" class="form-label" style="margin-bottom: 0; font-size:12px;">Tandai sebagai Isi Full Tanki</label>
+              </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- NEW RETASE FEATURES -->
+            <!-- ============================== -->
+            <hr style="border: 0; border-top: 2px dashed var(--border); margin: 20px 0 15px 0;">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 15px; color: var(--text);">Tambahan Rincian Retase (Dipisah)</div>
+            
             <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
-              <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text);">Data Retase (Enter untuk lompat)</div>
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text);">Rincian Retase (Enter untuk lompat)</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="roda10RetaseGrid">
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">SP</label><input type="number" class="form-input retase-input" id="r10_sp" min="0" placeholder="0"></div>
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">ND</label><input type="number" class="form-input retase-input" id="r10_nd" min="0" placeholder="0"></div>
@@ -1279,23 +1311,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1/2 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSetengah" min="0" placeholder="0"></div>
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
               </div>
-            </div>
-
-            <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
-              <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text);">Pengisian Solar</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label" style="font-size:11px;">Status Solar</label>
-                  <select class="form-input" id="r10_statusSolar">
-                    <option value="TF">Tidak Full (TF)</option>
-                    <option value="FULL">FULL</option>
-                    <option value="TIDAK ISI">TIDAK ISI</option>
-                  </select>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label" style="font-size:11px;">Jumlah Air (Kosongkan bila tidak isi)</label>
-                  <input type="text" inputmode="text" class="form-input retase-input" id="roda10Input" placeholder="Cth: 2">
-                </div>
+              <div class="form-group" style="margin-top: 15px; margin-bottom:0;">
+                <label class="form-label" style="font-size:11px;">Status Solar Khusus Retase Baru</label>
+                <select class="form-input retase-input" id="r10_statusSolar">
+                  <option value="TF">Tidak Full (TF)</option>
+                  <option value="FULL">FULL</option>
+                  <option value="TIDAK ISI">TIDAK ISI</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1309,9 +1331,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <tr>
                   <th>No.</th>
                   <th>Sopir</th>
-                  <th>Total Ret.</th>
+                  <th>Ret.</th>
+                  <th>Ret.F</th>
+                  <th>Rincian Ret.</th>
                   <th>Air</th>
-                  <th>Status Solar</th>
+                  <th>Full Tanki</th>
+                  <th>Status Solar Khusus</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -2523,7 +2548,13 @@ async function saveMasterData() {
     function addRoda10() {
       const sopir = document.getElementById('roda10Sopir').value.trim();
       
-      const retase = {
+      const r_v = document.getElementById('roda10Retase').value;
+      const retaseBiasa = r_v !== '' ? parseInt(r_v) : '';
+      const rf_v = document.getElementById('roda10RetaseFull').value;
+      const retaseFull = rf_v !== '' ? parseInt(rf_v) : '';
+      const isFull = document.getElementById('roda10IsFull').checked;
+
+      const retaseObj = {
         sp: parseInt(document.getElementById('r10_sp').value) || 0,
         nd: parseInt(document.getElementById('r10_nd').value) || 0,
         pasir: parseInt(document.getElementById('r10_pasir').value) || 0,
@@ -2534,20 +2565,22 @@ async function saveMasterData() {
         lansirSatu: parseInt(document.getElementById('r10_lansirSatu').value) || 0,
       };
       
-      const sumRetase = Object.values(retase).reduce((a, b) => a + b, 0);
+      const sumRetase = Object.values(retaseObj).reduce((a, b) => a + b, 0);
 
       const statusSolar = document.getElementById('r10_statusSolar').value;
       const {jirgen, liter} = parseInput('roda10Input');
 
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
-      if (jirgen === 0 && liter === 0 && sumRetase === 0) { 
+      if (jirgen === 0 && liter === 0 && sumRetase === 0 && retaseBiasa === '' && retaseFull === '') { 
         showToast('Isi retase atau jumlah solar!', 'error'); return; 
       }
 
       data.roda10.push({ 
         sopir, 
-        retaseObj: retase, 
-        retase: sumRetase, // for backward compatibility in calculations
+        retaseObj, 
+        retase: retaseBiasa !== '' ? retaseBiasa : (sumRetase > 0 ? sumRetase : ''), // Prioritize old excel input if exists, otherwise fallback to sum
+        retaseFull,
+        isFull,
         statusSolar,
         jirgen, 
         liter
@@ -2558,6 +2591,9 @@ async function saveMasterData() {
 
       // Reset
       document.getElementById('roda10Sopir').value = '';
+      document.getElementById('roda10Retase').value = '';
+      document.getElementById('roda10RetaseFull').value = '';
+      document.getElementById('roda10IsFull').checked = false;
       document.getElementById('r10_sp').value = '';
       document.getElementById('r10_nd').value = '';
       document.getElementById('r10_pasir').value = '';
@@ -2569,8 +2605,8 @@ async function saveMasterData() {
       document.getElementById('r10_statusSolar').value = 'TF';
       document.getElementById('roda10Input').value = '';
 
-      showToast(`10 Roda: ${sopir} - ${sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)}`, 'success');
-      addHistory('roda10', `10 Roda: ${sopir} - ${sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)} jirgen`);
+      showToast(`10 Roda: ${sopir} tersimpan`, 'success');
+      addHistory('roda10', `10 Roda: ${sopir} - ${retaseBiasa !== '' ? retaseBiasa : sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deleteRoda10(index) {
@@ -2670,6 +2706,10 @@ async function saveMasterData() {
       if (!item) return;
       
       document.getElementById('roda10Sopir').value = item.sopir || '';
+      document.getElementById('roda10Retase').value = item.retase !== undefined && !item.retaseObj ? item.retase : ''; // If there's an obj, retase is probably calculated, so keep blank
+      document.getElementById('roda10RetaseFull').value = item.retaseFull !== undefined ? item.retaseFull : '';
+      document.getElementById('roda10IsFull').checked = !!item.isFull;
+
       document.getElementById('r10_sp').value = item.retaseObj?.sp || '';
       document.getElementById('r10_nd').value = item.retaseObj?.nd || '';
       document.getElementById('r10_pasir').value = item.retaseObj?.pasir || '';
@@ -2862,13 +2902,17 @@ async function saveMasterData() {
         totalLiters += liters;
         
         let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
-        let retaseTotal = item.retaseObj ? Object.values(item.retaseObj).reduce((a,b)=>a+b,0) : (item.retase || 0);
+        let retaseTotal = item.retaseObj ? Object.values(item.retaseObj).reduce((a,b)=>a+b,0) : 0;
+        let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
         html += `<tr>
           <td class="row-num">${i + 1}</td>
           <td><strong>${item.sopir}</strong></td>
+          <td>${retaseBiasa}</td>
+          <td>${item.retaseFull !== undefined && item.retaseFull !== '' ? item.retaseFull : '-'}</td>
           <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
+          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
           <td><span style="background: ${statusSolarHtml==='FULL'?'var(--primary)':'var(--accent)'}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${statusSolarHtml}</span></td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
@@ -2876,8 +2920,9 @@ async function saveMasterData() {
 
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
-        <td colspan="3" style="text-align:right">JUMLAH</td>
+        <td colspan="5" style="text-align:right">JUMLAH</td>
         <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
+        <td></td>
         <td></td>
         <td></td>
       </tr>`;
