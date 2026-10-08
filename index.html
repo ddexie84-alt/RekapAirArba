@@ -1262,29 +1262,44 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🚛</span> Tambah Air Keluar - 10 Roda</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nama Sopir</label>
+              <label class="form-label">Pilih Sopir</label>
               <input type="text" class="form-input" id="roda10Sopir" list="roda10List" placeholder="Nama sopir">
-            <datalist id="roda10List"></datalist>
+              <datalist id="roda10List"></datalist>
             </div>
-            <div class="form-group">
-              <label class="form-label">Jml Retase (Opsional)</label>
-              <input type="number" class="form-input" id="roda10Retase" min="0" placeholder="0">
+            
+            <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text);">Data Retase (Enter untuk lompat)</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="roda10RetaseGrid">
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">SP</label><input type="number" class="form-input retase-input" id="r10_sp" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">ND</label><input type="number" class="form-input retase-input" id="r10_nd" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Pasir Pasang</label><input type="number" class="form-input retase-input" id="r10_pasir" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Sirtu</label><input type="number" class="form-input retase-input" id="r10_sirtu" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Kosongan</label><input type="number" class="form-input retase-input" id="r10_kosongan" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Pembuangan</label><input type="number" class="form-input retase-input" id="r10_pembuangan" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1/2 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSetengah" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Retase Full (Opsional)</label>
-              <input type="number" class="form-input" id="roda10RetaseFull" min="0" placeholder="0">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Jumlah Air</label>
-              <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
-               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
-            </div>
-            <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;">
-              <label for="roda10IsFull" class="form-label" style="margin-bottom: 0;">Tandai sebagai Isi Full Tanki</label>
+
+            <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text);">Pengisian Solar</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">Status Solar</label>
+                  <select class="form-input" id="r10_statusSolar">
+                    <option value="TF">Tidak Full (TF)</option>
+                    <option value="FULL">FULL</option>
+                    <option value="TIDAK ISI">TIDAK ISI</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">Jumlah Air (Kosongkan bila tidak isi)</label>
+                  <input type="text" inputmode="text" class="form-input retase-input" id="roda10Input" placeholder="Cth: 2">
+                </div>
+              </div>
             </div>
           </div>
-          <button class="btn btn-primary btn-block" onclick="addRoda10()">➕ Tambah</button>
+          <button class="btn btn-primary btn-block retase-input" onclick="addRoda10()">➕ Simpan 10 Roda</button>
         </div>
         <div class="card">
           <div class="card-title"><span class="emoji">📋</span> Rincian 10 Roda</div>
@@ -1294,10 +1309,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <tr>
                   <th>No.</th>
                   <th>Sopir</th>
-                  <th>Ret.</th>
-                  <th>Ret.F</th>
+                  <th>Total Ret.</th>
                   <th>Air</th>
-                  <th>Full Tanki</th>
+                  <th>Status Solar</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -1477,7 +1491,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             <input type="text" class="form-input" id="masterPlat" placeholder="Nomor Plat">
           </div>
           
-          <button class="btn" style="width:100%; margin-bottom:20px; background: #6c757d; color: white;" onclick="forceReloadMaster()">🔄 Paksa Muat Ulang Data Karyawan (Anti-Cache)</button>
+          <button class="btn" style="width:100%; margin-bottom:20px; background: #6c757d; color: white;" onclick="forceReloadMaster()">🔄 Refresh Data Karyawan</button>
 
           <button class="btn btn-primary" onclick="addMasterSopir()" style="width:100%; margin-bottom:20px;">Simpan</button>
           
@@ -1607,19 +1621,16 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     let masterExca = [];
     let masterRoda10 = [];
 
-async function loadMasterData() {
+    let masterLoadAttempts = 0;
+    async function loadMasterData() {
       try {
         const res = await fetch('/api/getMaster?t=' + new Date().getTime());
         if (res.ok) {
-let raw = await res.text();
+          let raw = await res.text();
           if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
           let parseAttempts = 0;
           while (typeof raw === 'string' && parseAttempts < 3) {
-            try { 
-              raw = JSON.parse(raw); 
-            } catch(e) { 
-              break; 
-            }
+            try { raw = JSON.parse(raw); } catch(e) { break; }
             parseAttempts++;
           }
           
@@ -1633,19 +1644,29 @@ let raw = await res.text();
             masterSopir = []; masterExca = []; masterRoda10 = [];
           }
           
-          // REFRESH UI
           renderMasterSopir();
           renderMasterExca();
           renderMasterRoda10();
+          
+          // Retry logic if data is suspiciously empty
+          if (masterSopir.length === 0 && masterExca.length === 0 && masterLoadAttempts < 3) {
+            masterLoadAttempts++;
+            setTimeout(loadMasterData, 2000);
+          } else {
+            if(masterLoadAttempts > 0 || masterSopir.length > 0) {
+              showToast('Data Karyawan siap!', 'success');
+            }
+          }
         } else {
           showToast('Gagal load master: ' + res.status, 'error');
         }
       } catch(e) {
-        showToast('Error network load master', 'error');
+        showToast('Error network load master: ' + e.message, 'error');
+        if (masterLoadAttempts < 3) {
+          masterLoadAttempts++;
+          setTimeout(loadMasterData, 2000);
+        }
       }
-      renderMasterSopir();
-      renderMasterExca();
-      renderMasterRoda10();
     }
 
 async function saveMasterData() {
@@ -2004,11 +2025,26 @@ async function saveMasterData() {
             const found = masterRoda10.find(x => x.nama.toLowerCase().startsWith(val));
             if(found) {
               e.target.value = found.nama;
-              document.getElementById('roda10Input').focus();
+              document.getElementById('r10_sp').focus(); // Jump to first retase input
             }
           }
         });
       }
+
+      // Fast Enter-to-Next logic for Retase form
+      const retaseInputs = document.querySelectorAll('.retase-input');
+      retaseInputs.forEach((input, index) => {
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (index < retaseInputs.length - 1) {
+              retaseInputs[index + 1].focus();
+            } else {
+              addRoda10();
+            }
+          }
+        });
+      });
     });
 
 
@@ -2486,29 +2522,55 @@ async function saveMasterData() {
     // ============================================
     function addRoda10() {
       const sopir = document.getElementById('roda10Sopir').value.trim();
-      const retVal = document.getElementById('roda10Retase').value;
-      const retase = retVal !== '' ? parseInt(retVal) : '';
-      const retFullVal = document.getElementById('roda10RetaseFull').value;
-      const retaseFull = retFullVal !== '' ? parseInt(retFullVal) : '';
+      
+      const retase = {
+        sp: parseInt(document.getElementById('r10_sp').value) || 0,
+        nd: parseInt(document.getElementById('r10_nd').value) || 0,
+        pasir: parseInt(document.getElementById('r10_pasir').value) || 0,
+        sirtu: parseInt(document.getElementById('r10_sirtu').value) || 0,
+        kosongan: parseInt(document.getElementById('r10_kosongan').value) || 0,
+        pembuangan: parseInt(document.getElementById('r10_pembuangan').value) || 0,
+        lansirSetengah: parseInt(document.getElementById('r10_lansirSetengah').value) || 0,
+        lansirSatu: parseInt(document.getElementById('r10_lansirSatu').value) || 0,
+      };
+      
+      const sumRetase = Object.values(retase).reduce((a, b) => a + b, 0);
+
+      const statusSolar = document.getElementById('r10_statusSolar').value;
       const {jirgen, liter} = parseInput('roda10Input');
-      const isFull = document.getElementById('roda10IsFull').checked;
 
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
-      if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
+      if (jirgen === 0 && liter === 0 && sumRetase === 0) { 
+        showToast('Isi retase atau jumlah solar!', 'error'); return; 
+      }
 
-      data.roda10.push({ sopir, retase, retaseFull, jirgen, liter, isFull });
+      data.roda10.push({ 
+        sopir, 
+        retaseObj: retase, 
+        retase: sumRetase, // for backward compatibility in calculations
+        statusSolar,
+        jirgen, 
+        liter
+      });
       saveData();
       renderRoda10();
       updateSummary();
 
       // Reset
       document.getElementById('roda10Sopir').value = '';
-      document.getElementById('roda10Retase').value = '';
-      document.getElementById('roda10RetaseFull').value = '';
-      document.getElementById('roda10Input').value = ''; document.getElementById('roda10IsFull').checked = false;
+      document.getElementById('r10_sp').value = '';
+      document.getElementById('r10_nd').value = '';
+      document.getElementById('r10_pasir').value = '';
+      document.getElementById('r10_sirtu').value = '';
+      document.getElementById('r10_kosongan').value = '';
+      document.getElementById('r10_pembuangan').value = '';
+      document.getElementById('r10_lansirSetengah').value = '';
+      document.getElementById('r10_lansirSatu').value = '';
+      document.getElementById('r10_statusSolar').value = 'TF';
+      document.getElementById('roda10Input').value = '';
 
-      showToast(`10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
-      addHistory('roda10', `10 Roda: ${sopir} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
+      showToast(`10 Roda: ${sopir} - ${sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)}`, 'success');
+      addHistory('roda10', `10 Roda: ${sopir} - ${sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)} jirgen`);
     }
 
     function deleteRoda10(index) {
@@ -2606,20 +2668,33 @@ async function saveMasterData() {
     function editRoda10(idx) {
       const item = data.roda10[idx];
       if (!item) return;
-      const newSopir = prompt('Edit nama sopir:', item.sopir || '');
-      if (newSopir === null) return;
-      const curJL = formatJirgenLiter(item.jirgen, item.liter);
-      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
-      if (newJumlah === null) return;
-      let j = 0, l = 0;
-      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
-      if (!newSopir.trim()) { showToast('Nama sopir tidak boleh kosong!', 'error'); return; }
-      data.roda10[idx].sopir = newSopir.trim();
-      data.roda10[idx].jirgen = j;
-      data.roda10[idx].liter = l;
-      saveData(); renderRoda10(); updateSummary();
-      showToast('Data 10 roda berhasil diubah!', 'success');
-      addHistory('roda10', 'Edit 10 Roda: ' + newSopir.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+      
+      document.getElementById('roda10Sopir').value = item.sopir || '';
+      document.getElementById('r10_sp').value = item.retaseObj?.sp || '';
+      document.getElementById('r10_nd').value = item.retaseObj?.nd || '';
+      document.getElementById('r10_pasir').value = item.retaseObj?.pasir || '';
+      document.getElementById('r10_sirtu').value = item.retaseObj?.sirtu || '';
+      document.getElementById('r10_kosongan').value = item.retaseObj?.kosongan || '';
+      document.getElementById('r10_pembuangan').value = item.retaseObj?.pembuangan || '';
+      document.getElementById('r10_lansirSetengah').value = item.retaseObj?.lansirSetengah || '';
+      document.getElementById('r10_lansirSatu').value = item.retaseObj?.lansirSatu || '';
+      
+      document.getElementById('r10_statusSolar').value = item.statusSolar || 'TF';
+      
+      if (item.jirgen > 0 || item.liter > 0) {
+        document.getElementById('roda10Input').value = `${item.jirgen}${item.liter > 0 ? '.' + item.liter : ''}`;
+      } else {
+        document.getElementById('roda10Input').value = '';
+      }
+
+      // Delete the old entry
+      data.roda10.splice(idx, 1);
+      saveData();
+      renderRoda10();
+      updateSummary();
+
+      document.getElementById('roda10Sopir').focus();
+      showToast('Silakan edit data di form atas, lalu klik Simpan 10 Roda', 'info');
     }
 
     function editPabrik(idx) {
@@ -2785,20 +2860,23 @@ async function saveMasterData() {
       data.roda10.forEach((item, i) => {
         const liters = toTotalLiters(item.jirgen, item.liter);
         totalLiters += liters;
+        
+        let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
+        let retaseTotal = item.retaseObj ? Object.values(item.retaseObj).reduce((a,b)=>a+b,0) : (item.retase || 0);
+
         html += `<tr>
           <td class="row-num">${i + 1}</td>
-          <td>${item.sopir}</td>
-          <td>${item.retase || '-'}</td>
-          <td>${item.retaseFull || '-'}</td>
+          <td><strong>${item.sopir}</strong></td>
+          <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
-          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
+          <td><span style="background: ${statusSolarHtml==='FULL'?'var(--primary)':'var(--accent)'}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${statusSolarHtml}</span></td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
       });
 
       const { jirgen, liter } = fromTotalLiters(totalLiters);
       html += `<tr class="table-total">
-        <td colspan="4" style="text-align:right">JUMLAH</td>
+        <td colspan="3" style="text-align:right">JUMLAH</td>
         <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
         <td></td>
         <td></td>
