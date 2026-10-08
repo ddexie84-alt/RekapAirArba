@@ -1278,18 +1278,25 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <label class="form-label">Jml Retase (Opsional)</label>
                 <input type="number" class="form-input" id="roda10Retase" min="0" placeholder="0">
               </div>
-              <div class="form-group" style="margin-bottom:0;">
+              <!-- HIDDEN: Retase Full Lama -->
+              <div class="form-group" style="display: none;">
                 <label class="form-label">Retase Full (Opsional)</label>
                 <input type="number" class="form-input" id="roda10RetaseFull" min="0" placeholder="0">
               </div>
+
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Jumlah Air</label>
                 <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
                  <span class="jirgen-hint" style="font-size: 10px;">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter</span>
               </div>
-              <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom:0;">
-                <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;">
+              <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom:5px;">
+                <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;" onchange="document.getElementById('divRetaseSebelum').style.display = this.checked ? 'block' : 'none'">
                 <label for="roda10IsFull" class="form-label" style="margin-bottom: 0; font-size:12px;">Tandai sebagai Isi Full Tanki</label>
+              </div>
+              
+              <div class="form-group" id="divRetaseSebelum" style="display: none; background: #fff3cd; padding: 8px; border-radius: 4px; border: 1px solid #ffeeba; grid-column: span 2;">
+                <label class="form-label" style="font-size: 11px; color: #856404;">Retase Sebelum Isi Full <span style="font-size:9px; font-weight:normal;">(Isi jika hari ini jalan bbrp ret baru full)</span></label>
+                <input type="number" class="form-input" id="roda10RetaseSebelumFull" min="0" placeholder="Contoh: 4">
               </div>
             </div>
 
@@ -1311,14 +1318,6 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1/2 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSetengah" min="0" placeholder="0"></div>
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
               </div>
-              <div class="form-group" style="margin-top: 15px; margin-bottom:0;">
-                <label class="form-label" style="font-size:11px;">Status Solar Khusus Retase Baru</label>
-                <select class="form-input retase-input" id="r10_statusSolar">
-                  <option value="TF">Tidak Full (TF)</option>
-                  <option value="FULL">FULL</option>
-                  <option value="TIDAK ISI">TIDAK ISI</option>
-                </select>
-              </div>
             </div>
           </div>
           <button class="btn btn-primary btn-block retase-input" onclick="addRoda10()">➕ Simpan 10 Roda</button>
@@ -1336,7 +1335,6 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                   <th>Rincian Ret.</th>
                   <th>Air</th>
                   <th>Full Tanki</th>
-                  <th>Status Solar Khusus</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -2553,6 +2551,8 @@ async function saveMasterData() {
       const rf_v = document.getElementById('roda10RetaseFull').value;
       const retaseFull = rf_v !== '' ? parseInt(rf_v) : '';
       const isFull = document.getElementById('roda10IsFull').checked;
+      const rsf_v = document.getElementById('roda10RetaseSebelumFull').value;
+      const retaseSebelumFull = (isFull && rsf_v !== '') ? parseInt(rsf_v) : null;
 
       const retaseObj = {
         sp: parseInt(document.getElementById('r10_sp').value) || 0,
@@ -2565,13 +2565,15 @@ async function saveMasterData() {
         lansirSatu: parseInt(document.getElementById('r10_lansirSatu').value) || 0,
       };
       
-      const sumRetase = Object.values(retaseObj).reduce((a, b) => a + b, 0);
+      const sumRetase = (retaseObj.sp || 0) + (retaseObj.nd || 0) + (retaseObj.pasir || 0) + 
+                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0);
 
-      const statusSolar = document.getElementById('r10_statusSolar').value;
       const {jirgen, liter} = parseInput('roda10Input');
 
+      const isAnyRetaseFilled = Object.values(retaseObj).some(val => val > 0);
+
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
-      if (jirgen === 0 && liter === 0 && sumRetase === 0 && retaseBiasa === '' && retaseFull === '') { 
+      if (jirgen === 0 && liter === 0 && !isAnyRetaseFilled && retaseBiasa === '' && retaseFull === '') { 
         showToast('Isi retase atau jumlah solar!', 'error'); return; 
       }
 
@@ -2580,8 +2582,9 @@ async function saveMasterData() {
         retaseObj, 
         retase: retaseBiasa !== '' ? retaseBiasa : (sumRetase > 0 ? sumRetase : ''), // Prioritize old excel input if exists, otherwise fallback to sum
         retaseFull,
+        retaseSebelumFull,
         isFull,
-        statusSolar,
+        statusSolar: isFull ? 'FULL' : 'TF',
         jirgen, 
         liter
       });
@@ -2594,6 +2597,8 @@ async function saveMasterData() {
       document.getElementById('roda10Retase').value = '';
       document.getElementById('roda10RetaseFull').value = '';
       document.getElementById('roda10IsFull').checked = false;
+      document.getElementById('roda10RetaseSebelumFull').value = '';
+      document.getElementById('divRetaseSebelum').style.display = 'none';
       document.getElementById('r10_sp').value = '';
       document.getElementById('r10_nd').value = '';
       document.getElementById('r10_pasir').value = '';
@@ -2602,7 +2607,6 @@ async function saveMasterData() {
       document.getElementById('r10_pembuangan').value = '';
       document.getElementById('r10_lansirSetengah').value = '';
       document.getElementById('r10_lansirSatu').value = '';
-      document.getElementById('r10_statusSolar').value = 'TF';
       document.getElementById('roda10Input').value = '';
 
       showToast(`10 Roda: ${sopir} tersimpan`, 'success');
@@ -2709,6 +2713,8 @@ async function saveMasterData() {
       document.getElementById('roda10Retase').value = item.retase !== undefined && !item.retaseObj ? item.retase : ''; // If there's an obj, retase is probably calculated, so keep blank
       document.getElementById('roda10RetaseFull').value = item.retaseFull !== undefined ? item.retaseFull : '';
       document.getElementById('roda10IsFull').checked = !!item.isFull;
+      document.getElementById('roda10RetaseSebelumFull').value = item.retaseSebelumFull !== undefined && item.retaseSebelumFull !== null ? item.retaseSebelumFull : '';
+      document.getElementById('divRetaseSebelum').style.display = item.isFull ? 'block' : 'none';
 
       document.getElementById('r10_sp').value = item.retaseObj?.sp || '';
       document.getElementById('r10_nd').value = item.retaseObj?.nd || '';
@@ -2718,9 +2724,6 @@ async function saveMasterData() {
       document.getElementById('r10_pembuangan').value = item.retaseObj?.pembuangan || '';
       document.getElementById('r10_lansirSetengah').value = item.retaseObj?.lansirSetengah || '';
       document.getElementById('r10_lansirSatu').value = item.retaseObj?.lansirSatu || '';
-      
-      document.getElementById('r10_statusSolar').value = item.statusSolar || 'TF';
-      
       if (item.jirgen > 0 || item.liter > 0) {
         document.getElementById('roda10Input').value = `${item.jirgen}${item.liter > 0 ? '.' + item.liter : ''}`;
       } else {
@@ -2902,7 +2905,10 @@ async function saveMasterData() {
         totalLiters += liters;
         
         let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
-        let retaseTotal = item.retaseObj ? Object.values(item.retaseObj).reduce((a,b)=>a+b,0) : 0;
+        let retaseTotal = item.retaseObj ? (
+          (item.retaseObj.sp || 0) + (item.retaseObj.nd || 0) + (item.retaseObj.pasir || 0) + 
+          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0)
+        ) : 0;
         let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
         html += `<tr>
@@ -2913,7 +2919,6 @@ async function saveMasterData() {
           <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
           <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
           <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
-          <td><span style="background: ${statusSolarHtml==='FULL'?'var(--primary)':'var(--accent)'}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${statusSolarHtml}</span></td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
       });
@@ -2922,7 +2927,6 @@ async function saveMasterData() {
       html += `<tr class="table-total">
         <td colspan="5" style="text-align:right">JUMLAH</td>
         <td><strong>${formatJirgenLiter(jirgen, liter)}</strong></td>
-        <td></td>
         <td></td>
         <td></td>
       </tr>`;
@@ -3318,6 +3322,37 @@ async function saveMasterData() {
         const bufMasukOut = await wbMasuk.xlsx.writeBuffer();
         downloadBlob(bufMasukOut, `Laporan Air Masuk Harian ${fileDateStr}.xlsx`);
 
+        // --- PRELOAD PAST 30 DAYS FOR 'FULL SEBELUMNYA' CHECK ---
+        let fetchedHistory = [];
+        let fetchPromises = [];
+        let baseDate = new Date(currentDate);
+        for(let i=1; i<=30; i++) {
+          let loopDate = new Date(baseDate);
+          loopDate.setDate(loopDate.getDate() - i);
+          const yyyy = loopDate.getFullYear();
+          const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+          const dd = String(loopDate.getDate()).padStart(2, '0');
+          const prevDateStr = `${yyyy}-${mm}-${dd}`;
+          
+          fetchPromises.push(
+            fetch('/api/getData?date=' + prevDateStr + '&t=' + new Date().getTime())
+              .then(res => res.ok ? res.json() : null)
+              .then(fetched => ({ dateStr: `${dd}.${mm}.${yyyy}`, data: fetched }))
+              .catch(() => null)
+          );
+        }
+        fetchedHistory = await Promise.all(fetchPromises);
+        fetchedHistory = fetchedHistory.filter(h => h && h.data && h.data.roda10);
+
+        const getLastFullDate = (sopir) => {
+            if (!sopir) return null;
+            for(let h of fetchedHistory) {
+                const found = h.data.roda10.find(r => r.sopir && r.sopir.toLowerCase() === sopir.toLowerCase() && (r.isFull === true || r.statusSolar === 'FULL'));
+                if (found) return h.dateStr;
+            }
+            return null;
+        };
+
         // ---- 2. EXPORT AIR KELUAR ----
         const wbKeluar = new ExcelJS.Workbook();
         const bufferKeluar = Uint8Array.from(atob(TEMPLATE_KELUAR_B64), c => c.charCodeAt(0)).buffer;
@@ -3386,13 +3421,121 @@ async function saveMasterData() {
             wsKeluar.getCell('A' + row).value = i + 1;
             wsKeluar.getCell('B' + row).value = item.sopir;
             wsKeluar.getCell('C' + row).value = item.retase;
-            wsKeluar.getCell('D' + row).value = item.retaseFull;
             const airText = formatJirgenLiter(item.jirgen, item.liter);
-            wsKeluar.getCell('E' + row).value = (item.isFull || (item.jirgenFull > 0 || item.literFull > 0)) ? `${airText} ( FULL )` : airText;
+            const isFullCurrent = item.isFull || item.statusSolar === 'FULL' || (item.jirgenFull > 0 || item.literFull > 0);
+            wsKeluar.getCell('E' + row).value = isFullCurrent ? `${airText} ( FULL )` : airText;
             wsKeluar.getCell('F' + row).value = '';
+            
+            if (isFullCurrent) {
+                const lastFullDate = getLastFullDate(item.sopir);
+                if (lastFullDate) {
+                    wsKeluar.getCell('G' + row).value = `Full sebelumnya tanggal ${lastFullDate}`;
+                }
+
+                // Calculate FULL-to-FULL Solar accumulation
+                let accumulatedLiters = toTotalLiters(item.jirgen, item.liter);
+                
+                // Calculate FULL-to-FULL Retase accumulation
+                let accumulatedRetase = 0;
+                if (item.retaseSebelumFull !== undefined && item.retaseSebelumFull !== null) {
+                    accumulatedRetase += parseInt(item.retaseSebelumFull) || 0;
+                } else {
+                    accumulatedRetase += parseInt(item.retase) || 0;
+                }
+
+                for(let h of fetchedHistory) {
+                    const record = h.data.roda10.find(r => r.sopir && r.sopir.toLowerCase() === item.sopir.toLowerCase());
+                    if (record) {
+                        if (record.isFull === true || record.statusSolar === 'FULL') {
+                            // Stop at the previous full, add sisa retase
+                            let totalPrev = parseInt(record.retase) || 0;
+                            let sisaRetase = totalPrev;
+                            if (record.retaseSebelumFull !== undefined && record.retaseSebelumFull !== null) {
+                                sisaRetase = totalPrev - (parseInt(record.retaseSebelumFull) || 0);
+                            } else {
+                                sisaRetase = 0; // Default to 0 if not specified in old data
+                            }
+                            if (sisaRetase < 0) sisaRetase = 0;
+                            accumulatedRetase += sisaRetase;
+                            break; 
+                        } else {
+                            // Add solar and retase for intermediate TF days
+                            accumulatedLiters += toTotalLiters(record.jirgen, record.liter);
+                            accumulatedRetase += parseInt(record.retase) || 0;
+                        }
+                    }
+                }
+                wsKeluar.getCell('F' + row).value = formatFromLiters(accumulatedLiters);
+                wsKeluar.getCell('D' + row).value = accumulatedRetase > 0 ? accumulatedRetase : (item.retaseFull || '');
+            } else {
+                wsKeluar.getCell('D' + row).value = item.retaseFull || '';
+            }
           }
         });
         wsKeluar.getCell('E34').value = formatFromLiters(totalRoda10Liters);
+
+        // --- NEW: EXPORT RINCIAN RETASE 10 RODA ---
+        let startRowRetaseDetail = 36;
+        const detailCols = [ ['B','C'], ['E','F'], ['H','I'], ['K','L'] ];
+        
+        const validDrivers = data.roda10.filter(item => {
+           if (!item.retaseObj) return false;
+           return Object.values(item.retaseObj).some(val => val > 0);
+        });
+
+        validDrivers.forEach((driver, idx) => {
+           const cols = detailCols[idx];
+           if(!cols) return; // Ignore if more than 4 (Excel layout constraint)
+           
+           const col1 = cols[0];
+           const col2 = cols[1];
+           
+           // Header
+           const headerCell1 = wsKeluar.getCell(col1 + startRowRetaseDetail);
+           const headerCell2 = wsKeluar.getCell(col2 + startRowRetaseDetail);
+           
+           headerCell1.value = driver.sopir;
+           headerCell2.value = 'ret';
+           
+           [headerCell1, headerCell2].forEach(cell => {
+               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }; // Yellow
+               cell.font = { bold: true };
+               cell.border = {
+                  top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+               };
+           });
+
+           // Rows
+           let currentRow = startRowRetaseDetail + 1;
+           const materials = [
+              { key: 'sp', label: 'SP' },
+              { key: 'nd', label: 'ND' },
+              { key: 'pasir', label: 'pasir pasang' },
+              { key: 'sirtu', label: 'sirtu' },
+              { key: 'kosongan', label: 'kosongan' },
+              { key: 'pembuangan', label: 'pembuangan' },
+              { key: 'lansirSetengah', label: 'lansir 1/2 hari' },
+              { key: 'lansirSatu', label: 'lansir 1 hari' }
+           ];
+
+           materials.forEach(mat => {
+               const val = driver.retaseObj[mat.key];
+               if (val && val > 0) {
+                   const cell1 = wsKeluar.getCell(col1 + currentRow);
+                   const cell2 = wsKeluar.getCell(col2 + currentRow);
+                   
+                   cell1.value = mat.label;
+                   cell2.value = val;
+                   
+                   [cell1, cell2].forEach(cell => {
+                       cell.border = {
+                          top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+                       };
+                   });
+                   currentRow++;
+               }
+           });
+        });
 
         const bufKeluarOut = await wbKeluar.xlsx.writeBuffer();
         
