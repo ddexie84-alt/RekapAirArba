@@ -3470,6 +3470,14 @@ async function saveMasterData() {
             } else {
                 wsKeluar.getCell('D' + row).value = item.retaseFull || '';
             }
+
+            // Align all data cells to center
+            ['A','B','C','D','E','F','G'].forEach(c => {
+                const cell = wsKeluar.getCell(c + row);
+                if (cell.value !== undefined && cell.value !== null && cell.value !== '') {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                }
+            });
           }
         });
         wsKeluar.getCell('E34').value = formatFromLiters(totalRoda10Liters);
@@ -3500,6 +3508,7 @@ async function saveMasterData() {
            [headerCell1, headerCell2].forEach(cell => {
                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }; // Yellow
                cell.font = { bold: true };
+               cell.alignment = { horizontal: 'center', vertical: 'middle' };
                cell.border = {
                   top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
                };
@@ -3527,6 +3536,8 @@ async function saveMasterData() {
                    cell1.value = mat.label;
                    cell2.value = val;
                    
+                   cell2.alignment = { horizontal: 'center', vertical: 'middle' };
+
                    [cell1, cell2].forEach(cell => {
                        cell.border = {
                           top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
