@@ -2213,9 +2213,14 @@ async function saveMasterData() {
       document.getElementById(`panel-${tab}`).classList.add('active');
       
       if (tab === 'sopir') {
-        renderMasterSopir();
-        renderMasterExca();
-        renderMasterRoda10();
+        if (masterSopir.length === 0 && masterExca.length === 0) {
+          showToast('Mengambil data terbaru...', 'info');
+          loadMasterData(true);
+        } else {
+          renderMasterSopir();
+          renderMasterExca();
+          renderMasterRoda10();
+        }
       }
     }
 
