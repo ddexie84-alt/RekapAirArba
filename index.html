@@ -1008,10 +1008,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         <div class="stock-value negative" id="stockKeluar">-0</div>
         <div class="stock-unit">jirgen</div>
       </div>
-      <div class="stock-item">
+      <div class="stock-item" style="position: relative;">
         <div class="stock-label">Stock Akhir</div>
         <div class="stock-value pulse" id="stockAkhir">0</div>
         <div class="stock-unit">jirgen</div>
+        <div id="stockAkhirReal" style="font-size: 11px; margin-top: 4px; display: none; position: absolute; bottom: -18px; width: 100%; text-align: center; font-weight: bold;"></div>
       </div>
     </div>
 
@@ -3187,6 +3188,9 @@ async function saveMasterData() {
       let errorPabrik = Math.max(0, masukPabrikLiters - keluarPabrikLiters);
       let totalErrorLiters = errorTambang + errorPabrik;
 
+      const topStockAkhir = document.getElementById('stockAkhir');
+      const topStockAkhirReal = document.getElementById('stockAkhirReal');
+
       if (totalErrorLiters > 0.01) { // Tolerate floating point inaccuracies
         const trueStockLiters = stockAkhirLiters - totalErrorLiters;
         errorContainer.style.display = 'block';
@@ -3201,6 +3205,15 @@ async function saveMasterData() {
         errorContainer.innerHTML = `⚠️ <strong>LOGIKA TIDAK MASUK AKAL!</strong><br>
         Anda mencatat Air Masuk ke Tambang/Pabrik tapi lupa mencatat pengeluarannya secara lengkap di menu Tambah Air Keluar.<br>
         <span style="display:block; margin-top:8px; font-weight:bold; color:#c53030;">Jika data ini tidak Anda perbaiki, Stock Aktual di Genset sebenarnya hanyalah: ${formatFromLiters(trueStockLiters)} (${trueStockLiters.toFixed(1)} L)</span>`;
+
+        if (topStockAkhir) {
+            topStockAkhir.style.color = '#fc8181'; // Red
+        }
+        if (topStockAkhirReal) {
+            topStockAkhirReal.style.display = 'block';
+            topStockAkhirReal.style.color = '#fc8181';
+            topStockAkhirReal.innerHTML = `True Stock:<br>${formatFromLiters(trueStockLiters)}`;
+        }
       } else {
         errorContainer.style.display = 'block';
         errorContainer.style.backgroundColor = '#f0fff4';
@@ -3212,6 +3225,13 @@ async function saveMasterData() {
         stockIcon.textContent = '✅';
         
         errorContainer.innerHTML = `✅ <strong>DATA AMAN.</strong> Logika input Air Masuk dan Keluar sudah sesuai.`;
+
+        if (topStockAkhir) {
+            topStockAkhir.style.color = '#fbd38d'; // Default Gold color
+        }
+        if (topStockAkhirReal) {
+            topStockAkhirReal.style.display = 'none';
+        }
       }
     }
 
