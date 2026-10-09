@@ -1613,13 +1613,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
         <div class="card-title"><span class="emoji">📋</span> Riwayat Transaksi</div>
         <p style="color:var(--text-secondary); font-size:12px; margin-bottom:12px;">Semua aktivitas tercatat otomatis dengan waktu.</p>
         <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-          <button class="btn btn-info" onclick="filterHistory('semua', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:1; transform:scale(1.05);">Semua</button>
-          <button class="btn btn-success" onclick="filterHistory('masuk', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Air Masuk</button>
-          <button class="btn btn-primary" onclick="filterHistory('loader', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Loader</button>
-          <button class="btn btn-primary" onclick="filterHistory('exa', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Excavator</button>
-          <button class="btn btn-primary" onclick="filterHistory('roda10', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">10 Roda</button>
-          <button class="btn btn-primary" onclick="filterHistory('pabrik', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Pabrik</button>
-          <button class="btn btn-danger" onclick="filterHistory('hapus', event)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Hapus</button>
+          <button class="btn btn-info" onclick="filterHistory('semua', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:1; transform:scale(1.05);">Semua</button>
+          <button class="btn btn-success" onclick="filterHistory('masuk', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Air Masuk</button>
+          <button class="btn btn-primary" onclick="filterHistory('loader', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Loader</button>
+          <button class="btn btn-primary" onclick="filterHistory('exa', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Excavator</button>
+          <button class="btn btn-primary" onclick="filterHistory('roda10', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">10 Roda</button>
+          <button class="btn btn-primary" onclick="filterHistory('pabrik', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Pabrik</button>
+          <button class="btn btn-danger" onclick="filterHistory('hapus', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Hapus</button>
         </div>
         <div id="historyList" style="max-height:500px; overflow-y:auto;">
           <p style="text-align:center; color:var(--text-secondary);">Belum ada riwayat.</p>
@@ -2342,19 +2342,18 @@ async function saveMasterData() {
       renderHistory();
     }
 
-    window.filterHistory = function(type, evt) {
+    window.filterHistory = function(type, btn) {
       historyFilter = type;
       renderHistory();
-      const e = evt || window.event;
-      if (e && e.currentTarget) {
-        const btns = e.currentTarget.parentElement.querySelectorAll('button');
+      if (btn) {
+        const btns = btn.parentElement.querySelectorAll('button');
         btns.forEach(b => {
           b.style.opacity = '0.4';
           b.style.transform = 'scale(0.95)';
           b.style.transition = 'all 0.2s';
         });
-        e.currentTarget.style.opacity = '1';
-        e.currentTarget.style.transform = 'scale(1.05)';
+        btn.style.opacity = '1';
+        btn.style.transform = 'scale(1.05)';
       }
     };
 
