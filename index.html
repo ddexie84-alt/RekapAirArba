@@ -1612,14 +1612,14 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
       <div class="card">
         <div class="card-title"><span class="emoji">📋</span> Riwayat Transaksi</div>
         <p style="color:var(--text-secondary); font-size:12px; margin-bottom:12px;">Semua aktivitas tercatat otomatis dengan waktu.</p>
-        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-          <button class="btn btn-info" onclick="filterHistory('semua', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:1; transform:scale(1.05);">Semua</button>
-          <button class="btn btn-success" onclick="filterHistory('masuk', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Air Masuk</button>
-          <button class="btn btn-primary" onclick="filterHistory('loader', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Loader</button>
-          <button class="btn btn-primary" onclick="filterHistory('exa', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Excavator</button>
-          <button class="btn btn-primary" onclick="filterHistory('roda10', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">10 Roda</button>
-          <button class="btn btn-primary" onclick="filterHistory('pabrik', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Pabrik</button>
-          <button class="btn btn-danger" onclick="filterHistory('hapus', this)" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Hapus</button>
+        <div id="historyFilterContainer" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+          <button class="btn btn-info" onclick="filterHistory('semua')" data-type="semua" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:1; transform:scale(1.05);">Semua</button>
+          <button class="btn btn-success" onclick="filterHistory('masuk')" data-type="masuk" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Air Masuk</button>
+          <button class="btn btn-primary" onclick="filterHistory('loader')" data-type="loader" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Loader</button>
+          <button class="btn btn-primary" onclick="filterHistory('exa')" data-type="exa" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Excavator</button>
+          <button class="btn btn-primary" onclick="filterHistory('roda10')" data-type="roda10" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">10 Roda</button>
+          <button class="btn btn-primary" onclick="filterHistory('pabrik')" data-type="pabrik" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Pabrik</button>
+          <button class="btn btn-danger" onclick="filterHistory('hapus')" data-type="hapus" style="font-size:12px; padding:6px 12px; transition:all 0.2s; opacity:0.4; transform:scale(0.95);">Hapus</button>
         </div>
         <div id="historyList" style="max-height:500px; overflow-y:auto;">
           <p style="text-align:center; color:var(--text-secondary);">Belum ada riwayat.</p>
@@ -2342,18 +2342,25 @@ async function saveMasterData() {
       renderHistory();
     }
 
-    window.filterHistory = function(type, btn) {
+    window.filterHistory = function(type) {
       historyFilter = type;
       renderHistory();
-      if (btn) {
-        const btns = btn.parentElement.querySelectorAll('button');
-        btns.forEach(b => {
-          b.style.opacity = '0.4';
-          b.style.transform = 'scale(0.95)';
-          b.style.transition = 'all 0.2s';
-        });
-        btn.style.opacity = '1';
-        btn.style.transform = 'scale(1.05)';
+      
+      const container = document.getElementById('historyFilterContainer');
+      if (container) {
+        const btns = container.querySelectorAll('button');
+        // Fallback untuk browser lawas yang tidak mendukung NodeList.forEach
+        for (let i = 0; i < btns.length; i++) {
+          let b = btns[i];
+          if (b.getAttribute('data-type') === type) {
+            b.style.opacity = '1';
+            b.style.transform = 'scale(1.05)';
+          } else {
+            b.style.opacity = '0.4';
+            b.style.transform = 'scale(0.95)';
+            b.style.transition = 'all 0.2s';
+          }
+        }
       }
     };
 
