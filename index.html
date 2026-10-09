@@ -1668,6 +1668,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     }
 
     let currentDate = '';
+    let currentErrorLiters = 0;
     let data = {
       stockPrev: { jirgen: 0, liter: 0 },
       masuk: [],
@@ -1972,7 +1973,7 @@ async function saveMasterData() {
       currentDate = `${yyyy}-${mm}-${dd}`;
       document.getElementById('currentDate').value = currentDate;
 
-      loadMasterData(); // Jalankan di background agar langsung muncul di tab Karyawan
+      await loadMasterData(); // Ditunggu agar langsung muncul di tab Karyawan
 
       const hh = String(today.getHours()).padStart(2, '0');
       const min = String(today.getMinutes()).padStart(2, '0');
@@ -2177,6 +2178,13 @@ async function saveMasterData() {
     }
 
     async function handleDateChange() {
+      if (currentErrorLiters > 0.01) {
+        showToast('Selesaikan dulu selisih air hari ini sebelum pindah tanggal!', 'error');
+        // Revert date picker
+        document.getElementById('currentDate').value = currentDate;
+        return;
+      }
+      
       currentDate = document.getElementById('currentDate').value;
       await loadData();
       renderAll();
@@ -2372,10 +2380,7 @@ async function saveMasterData() {
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      if (lokasi === 'Pabrik' || lokasi === 'Tambang') {
-        const msg = `PENTING!\n\nSolar sebanyak ${formatJirgenLiter(jirgen, liter)} jerigen masuk ke ${lokasi}.\n\nJika solar ini LANGSUNG diisi ke alat berat, Anda JUGA HARUS menginputnya di menu "Tambah Air Keluar" agar stok akhir Genset tetap akurat.\n\nLanjutkan simpan Air Masuk ini?`;
-        if (!confirm(msg)) return;
-      }
+      // (Peringatan alert konfirmasi telah dihapus sesuai permintaan)
 
       data.masuk.push({ lokasi, plat, sopir, jirgen, liter });
       saveData();
@@ -3282,6 +3287,7 @@ async function saveMasterData() {
       let totalMasukTruk = masukTambangLiters + masukPabrikLiters;
       let totalKeluarTruk = keluarTambangLiters + keluarPabrikLiters;
       let totalErrorLiters = Math.max(0, totalMasukTruk - totalKeluarTruk);
+      currentErrorLiters = totalErrorLiters;
       const trueStockLiters = stockAkhirLiters - totalErrorLiters;
 
       const topStockGenset = document.getElementById('stockGenset');
