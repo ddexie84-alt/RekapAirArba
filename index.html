@@ -1683,9 +1683,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     let masterRoda10 = [];
 
     let masterLoadAttempts = 0;
-    async function loadMasterData() {
+    async function loadMasterData(force = false) {
       try {
-        const res = await fetch('/api/getMaster?t=' + new Date().getTime());
+        const url = force ? '/api/getMaster?force=' + Math.random() : '/api/getMaster?t=' + new Date().getTime();
+        const res = await fetch(url);
         if (res.ok) {
           let raw = await res.text();
           if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
@@ -1709,23 +1710,24 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           renderMasterExca();
           renderMasterRoda10();
           
-          // Retry logic if data is suspiciously empty
-          if (masterSopir.length === 0 && masterExca.length === 0 && masterLoadAttempts < 3) {
-            masterLoadAttempts++;
-            setTimeout(loadMasterData, 2000);
-          } else {
-            if(masterLoadAttempts > 0 || masterSopir.length > 0) {
-              showToast('Data Karyawan siap!', 'success');
-            }
-          }
+          if (force) showToast('Data Karyawan berhasil dimuat ulang!', 'success');
         } else {
-          showToast('Gagal load master: ' + res.status, 'error');
+          console.error('Failed load master:', res.status);
+          if (force) showToast('Gagal load master: ' + res.status, 'error');
+        }
+
+        if (!force && masterSopir.length === 0 && masterExca.length === 0 && masterLoadAttempts < 3) {
+          masterLoadAttempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await loadMasterData();
         }
       } catch(e) {
-        showToast('Error network load master: ' + e.message, 'error');
-        if (masterLoadAttempts < 3) {
+        console.error('Network error load master:', e);
+        if (force) showToast('Error network: ' + e.message, 'error');
+        if (!force && masterLoadAttempts < 3) {
           masterLoadAttempts++;
-          setTimeout(loadMasterData, 2000);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await loadMasterData();
         }
       }
     }
@@ -3761,34 +3763,7 @@ async function saveMasterData() {
 
 
     async function forceReloadMaster() {
-      try {
-        const res = await fetch('/api/getMaster?force=' + Math.random());
-        if (res.ok) {
-          let raw = await res.text();
-          if(raw) raw = raw.replace(/^\uFEFF/, '').trim();
-          let parseAttempts = 0;
-          while (typeof raw === 'string' && parseAttempts < 3) {
-            try { raw = JSON.parse(raw); } catch(e) { break; }
-            parseAttempts++;
-          }
-          
-          if (Array.isArray(raw)) {
-            masterSopir = raw;
-          } else if (raw && typeof raw === 'object') {
-            masterSopir = raw.sopir || [];
-            masterExca = raw.exca || [];
-            masterRoda10 = raw.roda10 || [];
-          }
-          renderMasterSopir();
-          renderMasterExca();
-          renderMasterRoda10();
-          showToast('Data berhasil dimuat ulang!', 'success');
-        } else {
-          alert('Error Server: ' + res.status);
-        }
-      } catch (e) {
-        alert('Network Error: ' + e.message);
-      }
+      await loadMasterData(true);
     }
     function checkLokasiWarning() {
       const lokasi = document.getElementById('masukLokasi').value;
