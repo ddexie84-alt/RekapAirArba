@@ -3141,7 +3141,6 @@ async function saveMasterData() {
       document.getElementById('stockAwal').textContent = formatFromLiters(stockPrevLiters);
       document.getElementById('stockMasuk').textContent = `+${formatFromLiters(totalMasuk)}`;
       document.getElementById('stockKeluar').textContent = `-${formatFromLiters(totalKeluar)}`;
-      document.getElementById('stockAkhir').textContent = formatFromLiters(stockAkhir);
 
       // Update ringkasan tab
       const masukJL = fromTotalLiters(totalMasuk);
