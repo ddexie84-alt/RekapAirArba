@@ -2465,10 +2465,12 @@ async function saveMasterData() {
       }
       
       const cDate = document.getElementById('currentDate').value;
+      const getBase = name => (name || '').replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+      const baseOperator = getBase(operatorName);
       
       // 1. Cek apakah di hari yang SAMA sudah ada input untuk operator ini
       const todayList = [...(data.loader || []), ...(data.exa || [])]
-        .filter(x => x.operator === operatorName && x.hmIsi);
+        .filter(x => getBase(x.operator) === baseOperator && x.hmIsi);
       
       if (todayList.length > 0) {
         // Ambil HM Isi terakhir di hari ini
@@ -2477,15 +2479,24 @@ async function saveMasterData() {
       }
       
       // 2. Cek history dari hari-hari sebelumnya
-      if (data.hmHistory && data.hmHistory[operatorName]) {
-        const history = data.hmHistory[operatorName];
-        // filter data yang tanggalnya < tanggal yang dipilih saat ini
-        const past = history.filter(x => x.date < cDate);
-        if (past.length > 0) {
-          // Ambil yang paling terakhir (karena sudah di-sort ascending di backend)
-          document.getElementById(inputElementId).value = past[past.length - 1].hm;
+      if (data.hmHistory) {
+        let history = [];
+        for (let key in data.hmHistory) {
+           if (getBase(key) === baseOperator) {
+              history = history.concat(data.hmHistory[key]);
+           }
+        }
+        
+        if (history.length > 0) {
+            history.sort((a,b) => a.date.localeCompare(b.date));
+            const past = history.filter(x => x.date < cDate);
+            if (past.length > 0) {
+              document.getElementById(inputElementId).value = past[past.length - 1].hm;
+            } else {
+              document.getElementById(inputElementId).value = '';
+            }
         } else {
-          document.getElementById(inputElementId).value = '';
+            document.getElementById(inputElementId).value = '';
         }
       } else {
         document.getElementById(inputElementId).value = '';
