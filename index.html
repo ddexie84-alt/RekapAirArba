@@ -1418,6 +1418,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="summary-detail" id="sumStockDetail">= stock sebelumnya + masuk - keluar</div>
         </div>
       </div>
+      
+      <div id="smartErrorContainer" style="display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; line-height: 1.5; border: 1px solid transparent;">
+        <!-- Smart error message will be injected here -->
+      </div>
 
       <!-- Breakdown masuk -->
       <div class="card" style="margin-bottom: 16px;">
@@ -3167,8 +3171,48 @@ async function saveMasterData() {
       document.getElementById('bkRoda10').textContent = `${formatFromLiters(totalRoda10)}`;
       document.getElementById('bkPabrik').textContent = `${formatFromLiters(totalPabrik)}`;
 
+      checkSmartError(stockAkhir, masukTambang, totalLoader + totalExca + totalRoda10, masukPabrik, totalPabrik);
+
       renderAnalisaBBM();
       if(document.getElementById('aktualGensetInput').value) hitungPencocokanGenset();
+    }
+
+    function checkSmartError(stockAkhirLiters, masukTambangLiters, keluarTambangLiters, masukPabrikLiters, keluarPabrikLiters) {
+      const errorContainer = document.getElementById('smartErrorContainer');
+      const stockCard = document.querySelector('.summary-card.stock');
+      const stockVal = document.getElementById('sumStockVal');
+      const stockIcon = stockCard.querySelector('.summary-icon');
+
+      let errorTambang = Math.max(0, masukTambangLiters - keluarTambangLiters);
+      let errorPabrik = Math.max(0, masukPabrikLiters - keluarPabrikLiters);
+      let totalErrorLiters = errorTambang + errorPabrik;
+
+      if (totalErrorLiters > 0.01) { // Tolerate floating point inaccuracies
+        const trueStockLiters = stockAkhirLiters - totalErrorLiters;
+        errorContainer.style.display = 'block';
+        errorContainer.style.backgroundColor = '#fff5f5';
+        errorContainer.style.borderColor = '#feb2b2';
+        errorContainer.style.color = '#9b2c2c';
+        
+        stockCard.style.backgroundColor = '#fff5f5';
+        stockCard.style.border = '2px solid #feb2b2';
+        stockIcon.textContent = '🔴';
+        
+        errorContainer.innerHTML = `⚠️ <strong>LOGIKA TIDAK MASUK AKAL!</strong><br>
+        Anda mencatat Air Masuk ke Tambang/Pabrik tapi lupa mencatat pengeluarannya secara lengkap di menu Tambah Air Keluar.<br>
+        <span style="display:block; margin-top:8px; font-weight:bold; color:#c53030;">Jika data ini tidak Anda perbaiki, Stock Aktual di Genset sebenarnya hanyalah: ${formatFromLiters(trueStockLiters)} (${trueStockLiters.toFixed(1)} L)</span>`;
+      } else {
+        errorContainer.style.display = 'block';
+        errorContainer.style.backgroundColor = '#f0fff4';
+        errorContainer.style.borderColor = '#9ae6b4';
+        errorContainer.style.color = '#22543d';
+        
+        stockCard.style.backgroundColor = '#f0fff4';
+        stockCard.style.border = '2px solid #9ae6b4';
+        stockIcon.textContent = '✅';
+        
+        errorContainer.innerHTML = `✅ <strong>DATA AMAN.</strong> Logika input Air Masuk dan Keluar sudah sesuai.`;
+      }
     }
 
     function hitungPencocokanGenset() {
@@ -3328,6 +3372,8 @@ async function saveMasterData() {
         wsMasuk.getCell('C31').value = formatFromLiters(totalMasukLiters);
         wsMasuk.getCell('C32').value = formatFromLiters(totalKeluarLiters);
         wsMasuk.getCell('C33').value = (selisih < 0 ? '-' : '') + formatFromLiters(Math.abs(selisih));
+        wsMasuk.getCell('D33').value = ''; // Hapus teks 'liter'
+        wsMasuk.getCell('E33').value = ''; // Berjaga-jaga jika di E33
         wsMasuk.getCell('C35').value = formatFromLiters(stockAkhir);
 
         const bufMasukOut = await wbMasuk.xlsx.writeBuffer();
