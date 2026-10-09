@@ -2561,7 +2561,7 @@ async function saveMasterData() {
       if (!alat) { showToast('Isi nama alat!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      const selisihHm = (parseFloat(hmIsi) || 0) - (parseFloat(hmPrev) || 0);
+      const selisihHm = (hmIsi && hmPrev) ? ((parseFloat(hmIsi) || 0) - (parseFloat(hmPrev) || 0)) : 0;
 
       const sumber = document.getElementById('exaSumber').value;
 
@@ -3279,9 +3279,9 @@ async function saveMasterData() {
       const stockVal = document.getElementById('sumStockVal');
       const stockIcon = stockCard.querySelector('.summary-icon');
 
-      let errorTambang = Math.max(0, masukTambangLiters - keluarTambangLiters);
-      let errorPabrik = Math.max(0, masukPabrikLiters - keluarPabrikLiters);
-      let totalErrorLiters = errorTambang + errorPabrik;
+      let totalMasukTruk = masukTambangLiters + masukPabrikLiters;
+      let totalKeluarTruk = keluarTambangLiters + keluarPabrikLiters;
+      let totalErrorLiters = Math.max(0, totalMasukTruk - totalKeluarTruk);
       const trueStockLiters = stockAkhirLiters - totalErrorLiters;
 
       const topStockGenset = document.getElementById('stockGenset');
