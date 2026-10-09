@@ -1495,6 +1495,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             <span class="breakdown-name">🏭 Pabrik, dll</span>
             <span class="breakdown-value" id="bkPabrik">0</span>
           </li>
+          <li class="breakdown-item" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);">
+            <span class="breakdown-name" style="font-weight:bold;">⚡ Total Diambil dari Genset</span>
+            <span class="breakdown-value" id="bkKeluarGenset" style="font-weight:bold; color:var(--danger);">0</span>
+          </li>
         </ul>
       </div>
 
@@ -1968,19 +1972,41 @@ async function saveMasterData() {
     }
 
     async function init() {
+      // 1. Fetch server time to avoid timezone issues
+      let serverDate = '';
+      let serverTime = '';
+      try {
+        const timeRes = await fetch('/api/time?t=' + new Date().getTime());
+        if(timeRes.ok) {
+          const timeData = await timeRes.json();
+          serverDate = timeData.date;
+          serverTime = timeData.time;
+        }
+      } catch(e) { console.error('Failed to get server time', e); }
+
+      // 2. Fallback to local time if server time fails
       const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      currentDate = `${yyyy}-${mm}-${dd}`;
+      if (serverDate) {
+        currentDate = serverDate;
+      } else {
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        currentDate = `${yyyy}-${mm}-${dd}`;
+      }
       document.getElementById('currentDate').value = currentDate;
 
-      await loadMasterData(); // Ditunggu agar langsung muncul di tab Karyawan
+      await loadMasterData(true); // Ditunggu agar langsung muncul di tab Karyawan
 
-      const hh = String(today.getHours()).padStart(2, '0');
-      const min = String(today.getMinutes()).padStart(2, '0');
+      // 3. Set time inputs
+      let finalTime = serverTime;
+      if (!finalTime) {
+        const hh = String(today.getHours()).padStart(2, '0');
+        const min = String(today.getMinutes()).padStart(2, '0');
+        finalTime = `${hh}:${min}`;
+      }
       const timeInputs = document.querySelectorAll('input[type="time"]');
-      timeInputs.forEach(i => i.value = `${hh}:${min}`);
+      timeInputs.forEach(i => i.value = finalTime);
 
       await loadData();
       await loadHistory();
@@ -2045,11 +2071,29 @@ async function saveMasterData() {
     async function saveData() {
       showLoading('Menyimpan Data...');
       try {
-        await fetch('/api/saveData', {
+        const res = await fetch('/api/saveData', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: currentDate, data })
         });
+        
+        if (res.status === 409) {
+          alert('Data telah diubah oleh orang lain di waktu yang bersamaan. Halaman akan dimuat ulang untuk mencegah data hilang!');
+          location.reload();
+          return;
+        }
+
+        if (res.ok) {
+          const resData = await res.json();
+          // Update _rev to the new version if API returns it, or we can just fetch next time.
+          // Since our API currently doesn't return the new data, we might need to rely on the reload.
+          // Wait, if it succeeds, the next save will fail unless we update _rev.
+          // To be safe, we should reload data after save, but that's expensive.
+          // Actually, let's just increment `data._rev` manually!
+          data._rev = (data._rev || 0) + 1;
+        } else {
+          showToast('Gagal menyimpan ke database!', 'error');
+        }
       } catch (e) {
         console.error('Failed to save data', e);
         showToast('Gagal menyimpan ke database!', 'error');
@@ -3215,10 +3259,12 @@ async function saveMasterData() {
       // Total keluar per category
       let totalLoader = 0;
       let keluarTambangTruk = 0;
+      let keluarGenset = 0;
       data.loader.forEach(item => { 
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalLoader += lit; 
         if (item.sumber === 'Truk') keluarTambangTruk += lit;
+        if (item.sumber === 'Genset') keluarGenset += lit;
       });
 
       let totalExa = 0;
@@ -3226,6 +3272,7 @@ async function saveMasterData() {
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalExa += lit; 
         if (item.sumber === 'Truk') keluarTambangTruk += lit;
+        if (item.sumber === 'Genset') keluarGenset += lit;
       });
 
       let totalRoda10 = 0;
@@ -3233,6 +3280,7 @@ async function saveMasterData() {
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalRoda10 += lit; 
         if (item.sumber === 'Truk') keluarTambangTruk += lit;
+        if (item.sumber === 'Genset') keluarGenset += lit;
       });
 
       let totalPabrik = 0;
@@ -3241,6 +3289,7 @@ async function saveMasterData() {
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalPabrik += lit; 
         if (item.sumber === 'Truk') keluarPabrikTruk += lit;
+        if (item.sumber === 'Genset') keluarGenset += lit;
       });
 
       const totalKeluar = totalLoader + totalExa + totalRoda10 + totalPabrik;
@@ -3284,6 +3333,7 @@ async function saveMasterData() {
       document.getElementById('bkExa').textContent = `${formatFromLiters(totalExa)}`;
       document.getElementById('bkRoda10').textContent = `${formatFromLiters(totalRoda10)}`;
       document.getElementById('bkPabrik').textContent = `${formatFromLiters(totalPabrik)}`;
+      document.getElementById('bkKeluarGenset').textContent = `${formatFromLiters(keluarGenset)}`;
 
       checkSmartError(stockAkhir, masukTambang, keluarTambangTruk, masukPabrik, keluarPabrikTruk);
 
@@ -3299,7 +3349,7 @@ async function saveMasterData() {
 
       let totalMasukTruk = masukTambangLiters + masukPabrikLiters;
       let totalKeluarTruk = keluarTambangLiters + keluarPabrikLiters;
-      let totalErrorLiters = Math.max(0, totalMasukTruk - totalKeluarTruk);
+      let totalErrorLiters = totalMasukTruk - totalKeluarTruk;
       currentErrorLiters = totalErrorLiters;
       const trueStockLiters = stockAkhirLiters - totalErrorLiters;
 
@@ -3308,7 +3358,13 @@ async function saveMasterData() {
 
       if (topStockGenset) topStockGenset.textContent = formatFromLiters(trueStockLiters);
       if (topStockSelisih) {
-          topStockSelisih.textContent = totalErrorLiters > 0 ? `-${formatFromLiters(totalErrorLiters)}` : '0';
+          if (totalErrorLiters > 0.01) {
+            topStockSelisih.textContent = `-${formatFromLiters(totalErrorLiters)}`;
+          } else if (totalErrorLiters < -0.01) {
+            topStockSelisih.textContent = `+${formatFromLiters(Math.abs(totalErrorLiters))}`;
+          } else {
+            topStockSelisih.textContent = '0';
+          }
       }
 
       if (totalErrorLiters > 0.01) { // Tolerate floating point inaccuracies
@@ -3324,6 +3380,24 @@ async function saveMasterData() {
         errorContainer.innerHTML = `⚠️ <strong>LOGIKA TIDAK MASUK AKAL!</strong><br>
         Anda mencatat Air Masuk ke Tambang/Pabrik tapi lupa mencatat pengeluarannya secara lengkap di menu Tambah Air Keluar.<br>
         <span style="display:block; margin-top:8px; font-weight:bold; color:#c53030;">Jika data ini tidak Anda perbaiki, Stock Aktual di Genset sebenarnya hanyalah: ${formatFromLiters(trueStockLiters)} (${trueStockLiters.toFixed(1)} L)</span>`;
+
+        if (topStockSelisih) {
+            topStockSelisih.style.color = '#fc8181'; // Red
+            topStockSelisih.classList.add('pulse');
+        }
+      } else if (totalErrorLiters < -0.01) { // Selisih Kurang (Keluar > Masuk)
+        errorContainer.style.display = 'block';
+        errorContainer.style.backgroundColor = '#fff5f5';
+        errorContainer.style.borderColor = '#feb2b2';
+        errorContainer.style.color = '#9b2c2c';
+        
+        stockCard.style.backgroundColor = '#fff5f5';
+        stockCard.style.border = '2px solid #feb2b2';
+        stockIcon.textContent = '⚠️';
+        
+        errorContainer.innerHTML = `🚨 <strong>AIR KELUAR MELEBIHI TRUK!</strong><br>
+        Anda mencatat Air Keluar dari Truk lebih banyak daripada yang dimasukkan ke Truk! (Selisih: ${formatFromLiters(Math.abs(totalErrorLiters))}).<br>
+        <span style="display:block; margin-top:8px; font-weight:bold; color:#c53030;">Jika sisa pengeluaran ini sebenarnya diambil dari Genset, mohon Edit data pengeluaran dan ubah sumbernya menjadi Genset agar data Truk tidak mines!</span>`;
 
         if (topStockSelisih) {
             topStockSelisih.style.color = '#fc8181'; // Red
@@ -3399,17 +3473,19 @@ async function saveMasterData() {
     function parseJumlahStr(str) {
       if(!str) return { jirgen: 0, liter: 0 };
       str = str.toString().trim();
+      if (str.includes('-')) showToast('Input minus dilarang. Otomatis dikoreksi.', 'error');
+      
       const firstDotIdx = str.indexOf('.');
       if (firstDotIdx !== -1) {
         const jStr = str.substring(0, firstDotIdx);
         let lStr = str.substring(firstDotIdx + 1);
         lStr = lStr.replace(',', '.'); // allow comma as decimal inside liter
         return { 
-          jirgen: parseInt(jStr) || 0, 
-          liter: parseFloat(lStr) || 0 
+          jirgen: Math.abs(parseInt(jStr) || 0), 
+          liter: Math.abs(parseFloat(lStr) || 0) 
         };
       }
-      return { jirgen: parseInt(str) || 0, liter: 0 };
+      return { jirgen: Math.abs(parseInt(str) || 0), liter: 0 };
     }
 
     function parseInput(id) {
