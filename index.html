@@ -1155,6 +1155,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               <input type="time" class="form-input" id="loaderWaktu">
             </div>
             <div class="form-group">
+              <label class="form-label">Sumber Solar</label>
+              <select class="form-input" id="loaderSumber">
+                <option value="Genset">Dari Genset</option>
+                <option value="Truk">Langsung dari Truk / Tambang</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label class="form-label">Jumlah Air</label>
               <input type="text" inputmode="text" class="form-input" id="loaderInput" min="0" placeholder="Contoh: 2 atau 2.15">
                <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
@@ -1219,6 +1226,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             <div class="form-group">
               <label class="form-label">Retase Full (Opsional)</label>
               <input type="number" class="form-input" id="exaRetaseFull" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sumber Solar</label>
+              <select class="form-input" id="exaSumber">
+                <option value="Genset">Dari Genset</option>
+                <option value="Truk">Langsung dari Truk / Tambang</option>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
@@ -1290,6 +1304,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
               </div>
 
               <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Sumber Solar</label>
+                <select class="form-input" id="roda10Sumber">
+                  <option value="Genset">Dari Genset</option>
+                  <option value="Truk">Langsung dari Truk / Tambang</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Jumlah Air</label>
                 <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
                  <span class="jirgen-hint" style="font-size: 10px;">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter</span>
@@ -1360,6 +1381,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             <div class="form-group">
               <label class="form-label">Peruntukan Air</label>
               <input type="text" class="form-input" id="pabrikPeruntukan" placeholder="contoh: Genset, Mesin, dll">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sumber Solar</label>
+              <select class="form-input" id="pabrikSumber">
+                <option value="Genset">Dari Genset</option>
+                <option value="Truk">Langsung dari Truk / Tambang</option>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label">Jumlah Air</label>
@@ -2437,10 +2465,12 @@ async function saveMasterData() {
       const waktu = document.getElementById('loaderWaktu').value;
       const {jirgen, liter} = parseInput('loaderInput');
 
+      const sumber = document.getElementById('loaderSumber').value;
+
       if (!operator) { showToast('Pilih/ketik nama operator!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      data.loader.push({ operator, hmIsi, hmPrev, waktu, jirgen, liter });
+      data.loader.push({ operator, hmIsi, hmPrev, waktu, sumber, jirgen, liter });
       saveData();
       renderLoader();
       updateSummary();
@@ -2533,7 +2563,9 @@ async function saveMasterData() {
 
       const selisihHm = (parseFloat(hmIsi) || 0) - (parseFloat(hmPrev) || 0);
 
-      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, jirgen, liter, isFull });
+      const sumber = document.getElementById('exaSumber').value;
+
+      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, sumber, jirgen, liter, isFull });
       saveData();
       renderExa();
       updateSummary();
@@ -2592,6 +2624,8 @@ async function saveMasterData() {
 
       const isAnyRetaseFilled = Object.values(retaseObj).some(val => val > 0);
 
+      const sumber = document.getElementById('roda10Sumber').value;
+
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
       if (jirgen === 0 && liter === 0 && !isAnyRetaseFilled && retaseBiasa === '' && retaseFull === '') { 
         showToast('Isi retase atau jumlah solar!', 'error'); return; 
@@ -2605,6 +2639,7 @@ async function saveMasterData() {
         retaseSebelumFull,
         isFull,
         statusSolar: isFull ? 'FULL' : 'TF',
+        sumber,
         jirgen, 
         liter
       });
@@ -2649,10 +2684,12 @@ async function saveMasterData() {
       const peruntukan = document.getElementById('pabrikPeruntukan').value.trim();
       const {jirgen, liter} = parseInput('pabrikInput');
 
+      const sumber = document.getElementById('pabrikSumber').value;
+
       if (!peruntukan) { showToast('Isi peruntukan air!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      data.pabrik.push({ peruntukan, jirgen, liter });
+      data.pabrik.push({ peruntukan, sumber, jirgen, liter });
       saveData();
       renderPabrik();
       updateSummary();
@@ -2690,9 +2727,16 @@ async function saveMasterData() {
       if (newJumlah === null) return;
       let j = 0, l = 0;
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
+      
+      const curSumber = item.sumber || 'Genset';
+      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      if (newSumber === null) return;
+      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+
       if (!newOpr.trim()) { showToast('Operator tidak boleh kosong!', 'error'); return; }
       data.loader[idx].operator = newOpr.trim();
       data.loader[idx].waktu = newWaktu.trim();
+      data.loader[idx].sumber = newSumber;
       data.loader[idx].jirgen = j;
       data.loader[idx].liter = l;
       saveData(); renderLoader(); updateSummary();
@@ -2714,10 +2758,17 @@ async function saveMasterData() {
       if (newJumlah === null) return;
       let j = 0, l = 0;
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
+
+      const curSumber = item.sumber || 'Genset';
+      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      if (newSumber === null) return;
+      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+
       if (!newAlat.trim()) { showToast('Nama alat tidak boleh kosong!', 'error'); return; }
       data.exa[idx].alat = newAlat.trim();
       data.exa[idx].operator = newOpr.trim();
       data.exa[idx].waktu = newWaktu.trim();
+      data.exa[idx].sumber = newSumber;
       data.exa[idx].jirgen = j;
       data.exa[idx].liter = l;
       saveData(); renderExa(); updateSummary();
@@ -2730,6 +2781,7 @@ async function saveMasterData() {
       if (!item) return;
       
       document.getElementById('roda10Sopir').value = item.sopir || '';
+      document.getElementById('roda10Sumber').value = item.sumber || 'Genset';
       document.getElementById('roda10Retase').value = item.retase !== undefined && !item.retaseObj ? item.retase : ''; // If there's an obj, retase is probably calculated, so keep blank
       document.getElementById('roda10RetaseFull').value = item.retaseFull !== undefined ? item.retaseFull : '';
       document.getElementById('roda10IsFull').checked = !!item.isFull;
@@ -2770,8 +2822,15 @@ async function saveMasterData() {
       if (newJumlah === null) return;
       let j = 0, l = 0;
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
+
+      const curSumber = item.sumber || 'Genset';
+      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      if (newSumber === null) return;
+      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+
       if (!newPeruntukan.trim()) { showToast('Peruntukan tidak boleh kosong!', 'error'); return; }
       data.pabrik[idx].peruntukan = newPeruntukan.trim();
+      data.pabrik[idx].sumber = newSumber;
       data.pabrik[idx].jirgen = j;
       data.pabrik[idx].liter = l;
       saveData(); renderPabrik(); updateSummary();
@@ -2843,7 +2902,10 @@ async function saveMasterData() {
           <td>${item.hmIsi || '-'}</td>
           <td>${item.hmPrev || '-'}</td>
           <td>${item.waktu || '-'}</td>
-          <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
+          <td>
+            <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
+            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+          </td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editLoader(${i})">✏️</button><button class="delete-btn" onclick="deleteLoader(${i})">✕</button></td>
         </tr>`;
       });
@@ -2887,7 +2949,10 @@ async function saveMasterData() {
           <td>${item.waktu || '-'}</td>
           <td>${item.retase || '-'}</td>
           <td>${item.retaseFull || '-'}</td>
-          <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
+          <td>
+            <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
+            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+          </td>
           <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editExa(${i})">✏️</button><button class="delete-btn" onclick="deleteExa(${i})">✕</button></td>
         </tr>`;
@@ -2937,7 +3002,10 @@ async function saveMasterData() {
           <td>${retaseBiasa}</td>
           <td>${item.retaseFull !== undefined && item.retaseFull !== '' ? item.retaseFull : '-'}</td>
           <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
-          <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
+          <td>
+            <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
+            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+          </td>
           <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
@@ -2976,7 +3044,10 @@ async function saveMasterData() {
         html += `<tr>
           <td class="row-num">${i + 1}</td>
           <td>${item.peruntukan}</td>
-          <td><strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong></td>
+          <td>
+            <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
+            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+          </td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editPabrik(${i})">✏️</button><button class="delete-btn" onclick="deletePabrik(${i})">✕</button></td>
         </tr>`;
       });
@@ -3122,16 +3193,34 @@ async function saveMasterData() {
 
       // Total keluar per category
       let totalLoader = 0;
-      data.loader.forEach(item => { totalLoader += toTotalLiters(item.jirgen, item.liter); });
+      let keluarTambangTruk = 0;
+      data.loader.forEach(item => { 
+        const lit = toTotalLiters(item.jirgen, item.liter);
+        totalLoader += lit; 
+        if (item.sumber === 'Truk') keluarTambangTruk += lit;
+      });
 
       let totalExa = 0;
-      data.exa.forEach(item => { totalExa += toTotalLiters(item.jirgen, item.liter); });
+      data.exa.forEach(item => { 
+        const lit = toTotalLiters(item.jirgen, item.liter);
+        totalExa += lit; 
+        if (item.sumber === 'Truk') keluarTambangTruk += lit;
+      });
 
       let totalRoda10 = 0;
-      data.roda10.forEach(item => { totalRoda10 += toTotalLiters(item.jirgen, item.liter); });
+      data.roda10.forEach(item => { 
+        const lit = toTotalLiters(item.jirgen, item.liter);
+        totalRoda10 += lit; 
+        if (item.sumber === 'Truk') keluarTambangTruk += lit;
+      });
 
       let totalPabrik = 0;
-      data.pabrik.forEach(item => { totalPabrik += toTotalLiters(item.jirgen, item.liter); });
+      let keluarPabrikTruk = 0;
+      data.pabrik.forEach(item => { 
+        const lit = toTotalLiters(item.jirgen, item.liter);
+        totalPabrik += lit; 
+        if (item.sumber === 'Truk') keluarPabrikTruk += lit;
+      });
 
       const totalKeluar = totalLoader + totalExa + totalRoda10 + totalPabrik;
       const selisih = totalMasuk - totalKeluar;
@@ -3175,7 +3264,7 @@ async function saveMasterData() {
       document.getElementById('bkRoda10').textContent = `${formatFromLiters(totalRoda10)}`;
       document.getElementById('bkPabrik').textContent = `${formatFromLiters(totalPabrik)}`;
 
-      checkSmartError(stockAkhir, masukTambang, totalLoader + totalExa + totalRoda10, masukPabrik, totalPabrik);
+      checkSmartError(stockAkhir, masukTambang, keluarTambangTruk, masukPabrik, keluarPabrikTruk);
 
       renderAnalisaBBM();
       if(document.getElementById('aktualGensetInput').value) hitungPencocokanGenset();
