@@ -2729,9 +2729,10 @@ async function saveMasterData() {
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
       
       const curSumber = item.sumber || 'Genset';
-      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      let newSumber = prompt('Edit Sumber Solar.\nKetik "truk" jika dari Truk/Tambang.\nKetik "genset" jika dari Genset:', curSumber);
       if (newSumber === null) return;
-      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+      let s = newSumber.trim().toLowerCase();
+      newSumber = (s.includes('truk') || s.includes('tambang')) ? 'Truk' : 'Genset';
 
       if (!newOpr.trim()) { showToast('Operator tidak boleh kosong!', 'error'); return; }
       data.loader[idx].operator = newOpr.trim();
@@ -2760,9 +2761,10 @@ async function saveMasterData() {
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
 
       const curSumber = item.sumber || 'Genset';
-      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      let newSumber = prompt('Edit Sumber Solar.\nKetik "truk" jika dari Truk/Tambang.\nKetik "genset" jika dari Genset:', curSumber);
       if (newSumber === null) return;
-      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+      let s = newSumber.trim().toLowerCase();
+      newSumber = (s.includes('truk') || s.includes('tambang')) ? 'Truk' : 'Genset';
 
       if (!newAlat.trim()) { showToast('Nama alat tidak boleh kosong!', 'error'); return; }
       data.exa[idx].alat = newAlat.trim();
@@ -2824,9 +2826,10 @@ async function saveMasterData() {
       const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
 
       const curSumber = item.sumber || 'Genset';
-      let newSumber = prompt('Edit Sumber Solar (Genset / Truk):', curSumber);
+      let newSumber = prompt('Edit Sumber Solar.\nKetik "truk" jika dari Truk/Tambang.\nKetik "genset" jika dari Genset:', curSumber);
       if (newSumber === null) return;
-      newSumber = newSumber.trim().toLowerCase() === 'truk' ? 'Truk' : 'Genset';
+      let s = newSumber.trim().toLowerCase();
+      newSumber = (s.includes('truk') || s.includes('tambang')) ? 'Truk' : 'Genset';
 
       if (!newPeruntukan.trim()) { showToast('Peruntukan tidak boleh kosong!', 'error'); return; }
       data.pabrik[idx].peruntukan = newPeruntukan.trim();
