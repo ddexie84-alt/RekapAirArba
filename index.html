@@ -2211,6 +2211,12 @@ async function saveMasterData() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       document.getElementById(`panel-${tab}`).classList.add('active');
+      
+      if (tab === 'sopir') {
+        renderMasterSopir();
+        renderMasterExca();
+        renderMasterRoda10();
+      }
     }
 
     function switchSubTab(tab) {
