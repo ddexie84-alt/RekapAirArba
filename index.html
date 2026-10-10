@@ -1179,6 +1179,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                   <th>Operator</th>
                   <th>HM Isi</th>
                   <th>HM Sblm</th>
+                  <th>Selisih HM</th>
                   <th>Waktu</th>
                   <th>Jumlah</th>
                   <th></th>
@@ -2539,7 +2540,11 @@ async function saveMasterData() {
       if (!operator) { showToast('Pilih/ketik nama operator!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
-      data.loader.push({ operator, hmIsi, hmPrev, waktu, sumber, jirgen, liter });
+      const hmIsiFloat = parseFloat(hmIsi) || 0;
+      const hmPrevFloat = parseFloat(hmPrev) || 0;
+      const selisihHm = (hmIsi && hmPrev) ? (hmIsiFloat - hmPrevFloat) : 0;
+
+      data.loader.push({ operator, hmIsi, hmPrev, selisihHm, waktu, sumber, jirgen, liter });
       saveData();
       renderLoader();
       updateSummary();
@@ -2811,6 +2816,11 @@ async function saveMasterData() {
       data.loader[idx].operator = newOpr.trim();
       data.loader[idx].hmPrev = newHmPrev.trim();
       data.loader[idx].hmIsi = newHmIsi.trim();
+      
+      const hmIsiFloat = parseFloat(newHmIsi) || 0;
+      const hmPrevFloat = parseFloat(newHmPrev) || 0;
+      data.loader[idx].selisihHm = (newHmIsi && newHmPrev) ? (hmIsiFloat - hmPrevFloat) : 0;
+      
       data.loader[idx].waktu = newWaktu.trim();
       data.loader[idx].sumber = newSumber;
       data.loader[idx].jirgen = j;
@@ -2990,6 +3000,7 @@ async function saveMasterData() {
           <td>${item.operator}</td>
           <td>${item.hmIsi || '-'}</td>
           <td>${item.hmPrev || '-'}</td>
+          <td>${item.selisihHm ? item.selisihHm.toFixed(1) + ' Jam' : '-'}</td>
           <td>${item.waktu || '-'}</td>
           <td>
             <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
