@@ -3323,19 +3323,28 @@ async function saveMasterData() {
           retaseItemsHtml = `<br><span style="font-size:9px;color:var(--text-secondary);">${parts}</span>`;
         }
 
+        // Pre-compute air cell HTML to avoid nested template literal issues
+        let airCellHtml = '';
+        if (noSolar) {
+          airCellHtml = '<span style="color:var(--text-secondary);">-</span>';
+        } else {
+          airCellHtml = '<strong>' + formatJirgenLiter(item.jirgen, item.liter) + '</strong><br>';
+          if ((item.jirgenGenset !== undefined || item.jirgenTruk !== undefined) && item.sumber === 'Keduanya') {
+            airCellHtml += '<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#e2e8f0; color:#4a5568;">Genset: ' + formatJirgenLiter(item.jirgenGenset||0, item.literGenset||0) + '</span>&nbsp;<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#feebc8; color:#c05621;">Truk: ' + formatJirgenLiter(item.jirgenTruk||0, item.literTruk||0) + '</span>';
+          } else {
+            const bgCol = item.sumber==='Truk' ? '#feebc8' : '#e2e8f0';
+            const txCol = item.sumber==='Truk' ? '#c05621' : '#4a5568';
+            airCellHtml += '<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:' + bgCol + '; color:' + txCol + ';">' + (item.sumber||'Genset') + '</span>';
+          }
+        }
+
         html += `<tr style="${rowStyle}">
           <td class="row-num">${i + 1}</td>
           <td><strong>${item.sopir}</strong>${retaseOnlyBadge}</td>
           <td>${retaseBiasa}${retaseItemsHtml}</td>
           <td>${item.retaseFull !== undefined && item.retaseFull !== '' ? item.retaseFull : '-'}</td>
           <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
-          <td>
-            ${noSolar ? '<span style="color:var(--text-secondary);">-</span>' : `<strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
-            <br>${(item.jirgenGenset !== undefined || item.jirgenTruk !== undefined) && item.sumber === 'Keduanya'
-              ? \`<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#e2e8f0; color:#4a5568;">Genset: \${formatJirgenLiter(item.jirgenGenset||0, item.literGenset||0)}</span>&nbsp;<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#feebc8; color:#c05621;">Truk: \${formatJirgenLiter(item.jirgenTruk||0, item.literTruk||0)}</span>\`
-              : \`<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:\${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:\${item.sumber==='Truk'?'#c05621':'#4a5568'};">\${item.sumber||'Genset'}</span>\`
-            }`}
-          </td>
+          <td>${airCellHtml}</td>
           <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' + (item.prevFullDate ? '<br><span style="font-size:10px;color:var(--text-secondary)">(Sblm: ' + item.prevFullDate + ')</span>' : '') : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
