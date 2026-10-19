@@ -1247,6 +1247,10 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           </div>
           <button class="btn btn-primary btn-block" onclick="addExa()">➕ Tambah</button>
         </div>
+        <div class="card" id="excaRetaseSummaryCard" style="display:none; margin-bottom:12px; border: 1px solid var(--accent); background: var(--surface);">
+          <div class="card-title">📊 Rekap Ritase per Excavator <span style="font-size:11px;font-weight:400;color:var(--text-secondary);">(dari data 10 Roda hari ini)</span></div>
+          <div id="excaRetaseSummaryBox"></div>
+        </div>
         <div class="card">
           <div class="card-title"><span class="emoji">📋</span> Rincian Excavator</div>
           <div class="table-wrapper">
@@ -1304,18 +1308,21 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <input type="number" class="form-input" id="roda10RetaseFull" min="0" placeholder="0">
               </div>
 
+              <input type="hidden" id="roda10Sumber" value="Genset">
+              <!-- Air dari Genset -->
               <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Sumber Solar</label>
-                <select class="form-input" id="roda10Sumber">
-                  <option value="Genset">Dari Genset</option>
-                  <option value="Truk">Langsung dari Truk / Tambang</option>
-                </select>
+                <label class="form-label">🟢 Air dari Genset</label>
+                <input type="text" inputmode="text" class="form-input" id="roda10InputGenset" placeholder="Contoh: 1 atau 1.15 (opsional)">
+                <span class="jirgen-hint" style="font-size:10px;">Kosongkan jika tidak ada dari Genset</span>
               </div>
+              <!-- Air dari Truk/Tambang -->
               <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Jumlah Air</label>
-                <input type="text" inputmode="text" class="form-input" id="roda10Input" min="0" placeholder="Contoh: 2 atau 2.15">
-                 <span class="jirgen-hint" style="font-size: 10px;">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter</span>
+                <label class="form-label">🟠 Air dari Truk/Tambang</label>
+                <input type="text" inputmode="text" class="form-input" id="roda10InputTruk" placeholder="Contoh: 1 atau 0.15 (opsional)">
+                <span class="jirgen-hint" style="font-size:10px;">Kosongkan jika tidak ada dari Truk</span>
               </div>
+              <!-- Hidden legacy input for compatibility -->
+              <input type="hidden" id="roda10Input" value="">
               <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom:5px;">
                 <input type="checkbox" id="roda10IsFull" style="width: 20px; height: 20px;" onchange="document.getElementById('divRetaseSebelum').style.display = this.checked ? 'block' : 'none'">
                 <label for="roda10IsFull" class="form-label" style="margin-bottom: 0; font-size:12px;">Tandai sebagai Isi Full Tanki</label>
@@ -1346,6 +1353,17 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
               </div>
             </div>
+
+            <!-- ============================== -->
+            <!-- RETASE PER EXCA -->
+            <!-- ============================== -->
+            <hr style="border: 0; border-top: 2px dashed var(--border); margin: 20px 0 15px 0;">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text);">📍 Rincian Ritase per Excavator <span style="font-size:11px; font-weight:400; color:var(--text-secondary);">(Opsional – isi untuk rekap otomatis per exca)</span></div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Contoh: Bakri ambil di IWAN → SP1, di ANCI → PASIR, di ANCI → SP1</div>
+            <div id="retaseExcaList" style="margin-bottom: 10px;">
+              <!-- rows injected by JS -->
+            </div>
+            <button type="button" class="btn" style="background: var(--success); color: white; font-size: 12px; padding: 6px 14px; margin-bottom: 12px;" onclick="addRetaseExcaRow()">+ Tambah Ritase</button>
           </div>
           <button class="btn btn-primary btn-block retase-input" onclick="addRoda10()">➕ Simpan 10 Roda</button>
         </div>
@@ -2639,7 +2657,21 @@ async function saveMasterData() {
 
       const sumber = document.getElementById('exaSumber').value;
 
-      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, sumber, jirgen, liter, isFull });
+      let prevFullDate = null;
+      let mIdx = masterExca.findIndex(m => m.alat.trim() === alat);
+      if (mIdx !== -1) {
+        prevFullDate = masterExca[mIdx].lastFullDate || null;
+        if (isFull) {
+          masterExca[mIdx].lastFullDate = currentDate;
+          saveMasterData();
+        }
+      } else if (isFull) {
+        masterExca.push({ operator: operator, alat: alat, lastFullDate: currentDate });
+        saveMasterData();
+        renderMasterExca();
+      }
+
+      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, sumber, jirgen, liter, isFull, prevFullDate });
       saveData();
       renderExa();
       updateSummary();
@@ -2694,32 +2726,72 @@ async function saveMasterData() {
       const sumRetase = (retaseObj.sp || 0) + (retaseObj.nd || 0) + (retaseObj.pasir || 0) + 
                         (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0);
 
-      const {jirgen, liter} = parseInput('roda10Input');
+      // Parse air dari Genset dan Truk secara terpisah
+      const gensetInputEl = document.getElementById('roda10InputGenset');
+      const trukInputEl = document.getElementById('roda10InputTruk');
+      const gensetVal = gensetInputEl ? gensetInputEl.value.trim() : '';
+      const trukVal = trukInputEl ? trukInputEl.value.trim() : '';
+
+      let jirgenGenset = 0, literGenset = 0;
+      let jirgenTruk = 0, literTruk = 0;
+      if (gensetVal) { const pg = parseJumlahStr(gensetVal); jirgenGenset = pg.jirgen; literGenset = pg.liter; }
+      if (trukVal) { const pt = parseJumlahStr(trukVal); jirgenTruk = pt.jirgen; literTruk = pt.liter; }
+
+      // Total gabungan
+      const totalLit = toTotalLiters(jirgenGenset, literGenset) + toTotalLiters(jirgenTruk, literTruk);
+      const { jirgen, liter } = fromTotalLiters(totalLit);
+
+      // Tentukan sumber: gabungan, genset, atau truk
+      let sumber = 'Genset';
+      if (jirgenTruk > 0 || literTruk > 0) {
+        sumber = (jirgenGenset > 0 || literGenset > 0) ? 'Keduanya' : 'Truk';
+      }
 
       const isAnyRetaseFilled = Object.values(retaseObj).some(val => val > 0);
-
-      const sumber = document.getElementById('roda10Sumber').value;
+      const retaseItemsCheck = getRetaseExcaRows();
+      const hasAnyRetase = isAnyRetaseFilled || retaseBiasa !== '' || retaseFull !== '' || retaseItemsCheck.length > 0;
 
       if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
-      if (jirgen === 0 && liter === 0 && !isAnyRetaseFilled && retaseBiasa === '' && retaseFull === '') { 
+      if (jirgen === 0 && liter === 0 && !hasAnyRetase) { 
         showToast('Isi retase atau jumlah solar!', 'error'); return; 
       }
+
+      let prevFullDate = null;
+      let mIdx = masterRoda10.findIndex(m => m.nama.trim() === sopir);
+      if (mIdx !== -1) {
+        prevFullDate = masterRoda10[mIdx].lastFullDate || null;
+        if (isFull) {
+          masterRoda10[mIdx].lastFullDate = currentDate;
+          saveMasterData();
+        }
+      } else if (isFull) {
+        masterRoda10.push({ nama: sopir, lastFullDate: currentDate });
+        saveMasterData();
+        renderMasterRoda10();
+      }
+
+      const retaseItems = getRetaseExcaRows();
 
       data.roda10.push({ 
         sopir, 
         retaseObj, 
-        retase: retaseBiasa !== '' ? retaseBiasa : (sumRetase > 0 ? sumRetase : ''), // Prioritize old excel input if exists, otherwise fallback to sum
+        retase: retaseBiasa !== '' ? retaseBiasa : (sumRetase > 0 ? sumRetase : ''),
         retaseFull,
         retaseSebelumFull,
         isFull,
+        prevFullDate,
         statusSolar: isFull ? 'FULL' : 'TF',
         sumber,
+        jirgenGenset, literGenset,
+        jirgenTruk, literTruk,
         jirgen, 
-        liter
+        liter,
+        retaseItems
       });
       saveData();
       renderRoda10();
       updateSummary();
+      renderExcaRetaseSummary();
 
       // Reset
       document.getElementById('roda10Sopir').value = '';
@@ -2736,7 +2808,9 @@ async function saveMasterData() {
       document.getElementById('r10_pembuangan').value = '';
       document.getElementById('r10_lansirSetengah').value = '';
       document.getElementById('r10_lansirSatu').value = '';
-      document.getElementById('roda10Input').value = '';
+      if (gensetInputEl) gensetInputEl.value = '';
+      if (trukInputEl) trukInputEl.value = '';
+      clearRetaseExcaRows();
 
       showToast(`10 Roda: ${sopir} tersimpan`, 'success');
       addHistory('roda10', `10 Roda: ${sopir} - ${retaseBiasa !== '' ? retaseBiasa : sumRetase} Ritase - ${formatJirgenLiter(jirgen, liter)} jirgen`);
@@ -2752,8 +2826,129 @@ async function saveMasterData() {
     }
 
     // ============================================
-    // ADD DATA - PABRIK
+    // RETASE PER EXCA — Helper Functions
     // ============================================
+    const RETASE_MATERIALS = ['SP1', 'ND', 'Pasir', 'Sirtu', 'Kosongan', 'Pembuangan', 'Lansir 1/2', 'Lansir 1 Hari'];
+
+    function addRetaseExcaRow(jenis, excaName) {
+      const list = document.getElementById('retaseExcaList');
+      if (!list) return;
+      const idx = list.children.length;
+
+      // Build exca options from masterExca
+      const excaOptions = masterExca.map(e => {
+        const name = e.alat || e.operator || '';
+        const sel = (excaName && name === excaName) ? ' selected' : '';
+        return `<option value="${name}"${sel}>${name}</option>`;
+      }).join('');
+
+      const matOptions = RETASE_MATERIALS.map(m => {
+        const sel = (jenis && m === jenis) ? ' selected' : '';
+        return `<option value="${m}"${sel}>${m}</option>`;
+      }).join('');
+
+      const row = document.createElement('div');
+      row.className = 'retase-exca-row';
+      row.style.cssText = 'display:grid; grid-template-columns: 28px 1fr 1fr 28px; gap:6px; align-items:center; margin-bottom:6px;';
+      row.innerHTML = `
+        <span style="font-size:12px; color:var(--text-secondary); text-align:center;">${idx + 1}</span>
+        <select class="form-input" style="font-size:12px; padding:5px 6px;">
+          <option value="">-- Jenis --</option>${matOptions}
+        </select>
+        <select class="form-input" style="font-size:12px; padding:5px 6px;">
+          <option value="">-- Exca (opsional) --</option>${excaOptions}
+        </select>
+        <button type="button" onclick="removeRetaseExcaRow(this)" style="background:var(--danger);color:white;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">✕</button>
+      `;
+      list.appendChild(row);
+      renumberRetaseRows();
+    }
+
+    function removeRetaseExcaRow(btn) {
+      btn.closest('.retase-exca-row').remove();
+      renumberRetaseRows();
+    }
+
+    function renumberRetaseRows() {
+      const list = document.getElementById('retaseExcaList');
+      if (!list) return;
+      Array.from(list.children).forEach((row, i) => {
+        const num = row.querySelector('span');
+        if (num) num.textContent = i + 1;
+      });
+    }
+
+    function getRetaseExcaRows() {
+      const list = document.getElementById('retaseExcaList');
+      if (!list) return [];
+      const items = [];
+      Array.from(list.children).forEach(row => {
+        const selects = row.querySelectorAll('select');
+        const jenis = selects[0]?.value || '';
+        const exca = selects[1]?.value || '';
+        if (jenis) items.push({ jenis, exca });
+      });
+      return items;
+    }
+
+    function clearRetaseExcaRows() {
+      const list = document.getElementById('retaseExcaList');
+      if (list) list.innerHTML = '';
+    }
+
+    function loadRetaseExcaRows(items) {
+      clearRetaseExcaRows();
+      (items || []).forEach(item => addRetaseExcaRow(item.jenis, item.exca));
+    }
+
+    // Hitung total ritase per excavator dari seluruh data roda10 hari ini
+    function getExcaRetaseSummary() {
+      const summary = {}; // { "ANCI": [{sopir, jenis}, ...], "IWAN": [...] }
+      (data.roda10 || []).forEach(truck => {
+        (truck.retaseItems || []).forEach(item => {
+          if (item.exca) {
+            if (!summary[item.exca]) summary[item.exca] = [];
+            summary[item.exca].push({ sopir: truck.sopir, jenis: item.jenis });
+          }
+        });
+      });
+      return summary;
+    }
+
+    function renderExcaRetaseSummary() {
+      const el = document.getElementById('excaRetaseSummaryBox');
+      const card = document.getElementById('excaRetaseSummaryCard');
+      if (!el) return;
+      const summary = getExcaRetaseSummary();
+      const keys = Object.keys(summary);
+      if (keys.length === 0) {
+        if (card) card.style.display = 'none';
+        return;
+      }
+      if (card) card.style.display = 'block';
+      let html = '';
+      keys.forEach(excaName => {
+        const items = summary[excaName];
+        const total = items.length;
+        const bySopir = {};
+        items.forEach(x => { bySopir[x.sopir] = (bySopir[x.sopir] || 0) + 1; });
+        const sopirStr = Object.entries(bySopir).map(([s, n]) => `${s}×${n}`).join(', ');
+        const byMat = {};
+        items.forEach(x => { byMat[x.jenis] = (byMat[x.jenis] || 0) + 1; });
+        const matStr = Object.entries(byMat).map(([m, n]) => `${m}:${n}`).join(', ');
+        html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="flex:1;">
+            <strong style="font-size:13px;">${excaName}</strong>
+            <span style="font-size:10px;color:var(--text-secondary);margin-left:6px;">${matStr}</span><br>
+            <span style="font-size:11px;color:var(--text-secondary);">Oleh: ${sopirStr}</span>
+          </div>
+          <div style="font-size:18px;font-weight:700;color:var(--accent);white-space:nowrap;">${total} Rit</div>
+        </div>`;
+      });
+      el.innerHTML = html;
+    }
+
+
     function addPabrik() {
       const peruntukan = document.getElementById('pabrikPeruntukan').value.trim();
       const {jirgen, liter} = parseInput('pabrikInput');
@@ -2894,17 +3089,33 @@ async function saveMasterData() {
       document.getElementById('r10_pembuangan').value = item.retaseObj?.pembuangan || '';
       document.getElementById('r10_lansirSetengah').value = item.retaseObj?.lansirSetengah || '';
       document.getElementById('r10_lansirSatu').value = item.retaseObj?.lansirSatu || '';
-      if (item.jirgen > 0 || item.liter > 0) {
-        document.getElementById('roda10Input').value = `${item.jirgen}${item.liter > 0 ? '.' + item.liter : ''}`;
-      } else {
-        document.getElementById('roda10Input').value = '';
+      // Load air inputs - new split fields or legacy single field
+      const gensetInput = document.getElementById('roda10InputGenset');
+      const trukInput = document.getElementById('roda10InputTruk');
+      if (gensetInput && trukInput && (item.jirgenGenset !== undefined || item.jirgenTruk !== undefined)) {
+        // New format: split fields
+        gensetInput.value = (item.jirgenGenset > 0 || item.literGenset > 0) ? `${item.jirgenGenset || 0}${item.literGenset > 0 ? '.' + item.literGenset : ''}` : '';
+        trukInput.value = (item.jirgenTruk > 0 || item.literTruk > 0) ? `${item.jirgenTruk || 0}${item.literTruk > 0 ? '.' + item.literTruk : ''}` : '';
+      } else if (gensetInput && trukInput) {
+        // Legacy format: put all in genset or truk based on sumber
+        const legacyVal = (item.jirgen > 0 || item.liter > 0) ? `${item.jirgen}${item.liter > 0 ? '.' + item.liter : ''}` : '';
+        if (item.sumber === 'Truk') {
+          gensetInput.value = '';
+          trukInput.value = legacyVal;
+        } else {
+          gensetInput.value = legacyVal;
+          trukInput.value = '';
+        }
       }
+      // Load retaseItems (per exca) ke dynamic list
+      loadRetaseExcaRows(item.retaseItems || []);
 
       // Delete the old entry
       data.roda10.splice(idx, 1);
       saveData();
       renderRoda10();
       updateSummary();
+      renderExcaRetaseSummary();
 
       document.getElementById('roda10Sopir').focus();
       showToast('Silakan edit data di form atas, lalu klik Simpan 10 Roda', 'info');
@@ -3053,7 +3264,7 @@ async function saveMasterData() {
             <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
             <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
           </td>
-          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
+          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' + (item.prevFullDate ? '<br><span style="font-size:10px;color:var(--text-secondary)">(Sblm: ' + item.prevFullDate + ')</span>' : '') : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editExa(${i})">✏️</button><button class="delete-btn" onclick="deleteExa(${i})">✕</button></td>
         </tr>`;
       });
@@ -3096,17 +3307,36 @@ async function saveMasterData() {
         ) : 0;
         let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
-        html += `<tr>
+        const noSolar = (item.jirgen === 0 || !item.jirgen) && (item.liter === 0 || !item.liter);
+        const rowStyle = noSolar ? 'opacity:0.7; background: var(--bg);' : '';
+        const retaseOnlyBadge = noSolar ? '<br><span style="font-size:9px; padding:1px 5px; border-radius:3px; background:#805ad5; color:white;">Retase Only</span>' : '';
+
+        // Build retaseItems info
+        let retaseItemsHtml = '';
+        if (item.retaseItems && item.retaseItems.length > 0) {
+          const excaSummary = {};
+          item.retaseItems.forEach(ri => {
+            const key = ri.exca || 'Lainnya';
+            excaSummary[key] = (excaSummary[key] || 0) + 1;
+          });
+          const parts = Object.entries(excaSummary).map(([e, n]) => `${e}:${n}`).join(', ');
+          retaseItemsHtml = `<br><span style="font-size:9px;color:var(--text-secondary);">${parts}</span>`;
+        }
+
+        html += `<tr style="${rowStyle}">
           <td class="row-num">${i + 1}</td>
-          <td><strong>${item.sopir}</strong></td>
-          <td>${retaseBiasa}</td>
+          <td><strong>${item.sopir}</strong>${retaseOnlyBadge}</td>
+          <td>${retaseBiasa}${retaseItemsHtml}</td>
           <td>${item.retaseFull !== undefined && item.retaseFull !== '' ? item.retaseFull : '-'}</td>
           <td>${retaseTotal > 0 ? retaseTotal + ' Rit' : '-'}</td>
           <td>
-            <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
-            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+            ${noSolar ? '<span style="color:var(--text-secondary);">-</span>' : `<strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
+            <br>${(item.jirgenGenset !== undefined || item.jirgenTruk !== undefined) && item.sumber === 'Keduanya'
+              ? \`<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#e2e8f0; color:#4a5568;">Genset: \${formatJirgenLiter(item.jirgenGenset||0, item.literGenset||0)}</span>&nbsp;<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#feebc8; color:#c05621;">Truk: \${formatJirgenLiter(item.jirgenTruk||0, item.literTruk||0)}</span>\`
+              : \`<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:\${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:\${item.sumber==='Truk'?'#c05621':'#4a5568'};">\${item.sumber||'Genset'}</span>\`
+            }`}
           </td>
-          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' : '-'}</td>
+          <td>${item.isFull || (item.jirgenFull > 0 || item.literFull > 0) ? '✅ Ya' + (item.prevFullDate ? '<br><span style="font-size:10px;color:var(--text-secondary)">(Sblm: ' + item.prevFullDate + ')</span>' : '') : '-'}</td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editRoda10(${i})">✏️</button><button class="delete-btn" onclick="deleteRoda10(${i})">✕</button></td>
         </tr>`;
       });
@@ -3325,8 +3555,14 @@ async function saveMasterData() {
       data.roda10.forEach(item => { 
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalRoda10 += lit; 
-        if (item.sumber === 'Truk') keluarTambangTruk += lit;
-        if (item.sumber === 'Genset') keluarGenset += lit;
+        if (item.sumber === 'Keduanya') {
+          // Data baru: split per sumber
+          keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+          keluarTambangTruk += toTotalLiters(item.jirgenTruk || 0, item.literTruk || 0);
+        } else {
+          if (item.sumber === 'Truk') keluarTambangTruk += lit;
+          if (item.sumber === 'Genset') keluarGenset += lit;
+        }
       });
 
       let totalPabrik = 0;
@@ -3384,6 +3620,7 @@ async function saveMasterData() {
       checkSmartError(stockAkhir, masukTambang, keluarTambangTruk, masukPabrik, keluarPabrikTruk);
 
       renderAnalisaBBM();
+      renderExcaRetaseSummary();
       if(document.getElementById('aktualGensetInput').value) hitungPencocokanGenset();
     }
 
@@ -3725,12 +3962,15 @@ async function saveMasterData() {
         wsKeluar.getCell('J24').value = formatFromLiters(totalExaLiters);
 
         let totalRoda10Liters = 0;
+        let excelRowIdx = 0;
         data.roda10.forEach((item, i) => {
-          if (i < 4) {
-            const row = 30 + i;
+          const noSolar = (item.jirgen === 0 || !item.jirgen) && (item.liter === 0 || !item.liter);
+          if (noSolar) return; // Skip retase-only entries in Excel
+          if (excelRowIdx < 4) {
+            const row = 30 + excelRowIdx;
             const liters = toTotalLiters(item.jirgen, item.liter);
             totalRoda10Liters += liters;
-            wsKeluar.getCell('A' + row).value = i + 1;
+            wsKeluar.getCell('A' + row).value = excelRowIdx + 1;
             wsKeluar.getCell('B' + row).value = item.sopir;
             wsKeluar.getCell('C' + row).value = item.retase;
             const airText = formatJirgenLiter(item.jirgen, item.liter);
@@ -3790,6 +4030,7 @@ async function saveMasterData() {
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                 }
             });
+            excelRowIdx++;
           }
         });
         wsKeluar.getCell('E34').value = formatFromLiters(totalRoda10Liters);
