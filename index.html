@@ -1130,12 +1130,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🚜</span> Tambah Air Keluar - Loader</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nama Operator</label>
-              <select class="form-input" id="loaderOperator" onchange="autofillHmPrev(this.value, 'loaderHmPrev')">
-                <option value="">Pilih / ketik...</option>
-                <option value="Maspur">Maspur</option>
-                <option value="Wandy">Wandy</option>
-                <option value="Nimang">Nimang</option>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <label class="form-label" style="margin-bottom:0;">Nama Operator Loader</label>
+                <span style="font-size:11px; color:var(--accent); cursor:pointer; text-decoration:underline;" onclick="switchMainTab('sopir');">+ Kelola di Master</span>
+              </div>
+              <select class="form-input" id="loaderOperator" style="font-size:14px; font-weight:600; padding:10px; cursor:pointer;" onchange="autofillHmPrev(this.value, 'loaderHmPrev')">
+                <option value="">-- Pilih Operator Loader --</option>
               </select>
             </div>
             <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:28px;">
@@ -1200,13 +1200,17 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🏗️</span> Tambah Air Keluar - Excavator</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nama Operator</label>
-              <input type="text" class="form-input" id="exaOperator" list="oprList" placeholder="Nama operator" oninput="handleExaAutoFill(event)" onchange="handleExaAutoFill(event)">
-            <datalist id="oprList"></datalist>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <label class="form-label" style="margin-bottom:0;">Nama Operator Exca</label>
+                <span style="font-size:11px; color:var(--accent); cursor:pointer; text-decoration:underline;" onclick="switchMainTab('sopir');">+ Kelola di Master</span>
+              </div>
+              <select class="form-input" id="exaOperator" style="font-size:14px; font-weight:600; padding:10px; cursor:pointer;" onchange="handleExaSelectChange(this.value)">
+                <option value="">-- Pilih Operator Exca --</option>
+              </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Nama Alat</label>
-              <input type="text" class="form-input" id="exaAlat" placeholder="contoh: PC200-8">
+              <label class="form-label">Nama Alat (Otomatis dari Master)</label>
+              <input type="text" class="form-input" id="exaAlat" placeholder="contoh: PC200-8" readonly style="background:var(--bg); opacity:0.9;">
             </div>
             <div class="form-group">
               <label class="form-label">HM Saat Diisi (Opsional)</label>
@@ -1286,9 +1290,13 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           <div class="card-title"><span class="emoji">🚛</span> Tambah Air Keluar - 10 Roda</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Pilih Sopir (Ketik untuk filter otomatis)</label>
-              <input type="text" class="form-input" id="roda10Sopir" list="roda10List" placeholder="Nama sopir">
-              <datalist id="roda10List"></datalist>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <label class="form-label" style="margin-bottom:0;">Nama Sopir 10 Roda</label>
+                <span style="font-size:11px; color:var(--accent); cursor:pointer; text-decoration:underline;" onclick="switchMainTab('sopir'); switchSubTab('master-roda10');">+ Kelola Sopir di Master</span>
+              </div>
+              <select class="form-input" id="roda10Sopir" style="font-size:14px; font-weight:600; padding:10px; cursor:pointer;">
+                <option value="">-- Pilih Sopir 10 Roda --</option>
+              </select>
             </div>
             
             <!-- ============================== -->
@@ -1683,6 +1691,22 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             </table>
           </div>
         </div>
+
+        <!-- Card 4: Operator Loader -->
+        <div class="card" style="margin:0">
+          <div class="card-title">Operator Loader</div>
+          <div class="form-group">
+            <input type="text" class="form-input" id="masterNamaLoader" placeholder="Nama Operator Loader">
+          </div>
+          <button class="btn btn-primary" onclick="addMasterLoader()" style="width:100%; margin-bottom:20px;">Simpan</button>
+          
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+              <tbody id="masterLoaderTable"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   
@@ -1767,6 +1791,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
     let masterSopir = [];
     let masterExca = [];
     let masterRoda10 = [];
+    let masterLoader = [{ nama: 'Maspur' }, { nama: 'Wandy' }, { nama: 'Nimang' }, { nama: 'Daniel' }];
 
     let masterLoadAttempts = 0;
     async function loadMasterData(force = false) {
@@ -1788,14 +1813,17 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
             masterSopir = raw.sopir || [];
             masterExca = raw.exca || [];
             masterRoda10 = raw.roda10 || [];
+            masterLoader = (raw.loader && raw.loader.length > 0) ? raw.loader : [{ nama: 'Maspur' }, { nama: 'Wandy' }, { nama: 'Nimang' }, { nama: 'Daniel' }];
           } else {
             masterSopir = []; masterExca = []; masterRoda10 = [];
+            masterLoader = [{ nama: 'Maspur' }, { nama: 'Wandy' }, { nama: 'Nimang' }, { nama: 'Daniel' }];
           }
           
           renderMasterSopir();
           renderMasterExca();
           populateExcaRadios();
           renderMasterRoda10();
+          renderMasterLoader();
           
           if (force) showToast('Data Karyawan berhasil dimuat ulang!', 'success');
         } else {
@@ -1821,7 +1849,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
 
 async function saveMasterData() {
       try {
-        const payload = { data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10 } };
+        const payload = { data: { sopir: masterSopir, exca: masterExca, roda10: masterRoda10, loader: masterLoader } };
         const response = await fetch('/api/saveMaster', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1848,20 +1876,121 @@ async function saveMasterData() {
     
     function renderMasterExca() {
       const tbody = document.getElementById('masterExcaTable');
-      if(!tbody) return;
-      tbody.innerHTML = '';
-      masterExca.forEach((item, i) => {
-        tbody.innerHTML += `<tr>
-          <td>${item.operator}</td>
-          <td>${item.alat}</td>
-          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterExca(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterExca(${i})">Hapus</button></td>
-        </tr>`;
-      });
+      if(tbody) {
+        tbody.innerHTML = '';
+        masterExca.forEach((item, i) => {
+          tbody.innerHTML += `<tr>
+            <td>${item.operator}</td>
+            <td>${item.alat}</td>
+            <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterExca(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterExca(${i})">Hapus</button></td>
+          </tr>`;
+        });
+      }
+
+      // Populate Select Dropdown in Exca form
+      const sel = document.getElementById('exaOperator');
+      if (sel) {
+        const curVal = sel.value;
+        let optHtml = '<option value="">-- Pilih Operator Exca --</option>';
+        if (masterExca.length === 0) {
+          optHtml = '<option value="">-- Belum ada Exca (tambah di tab Karyawan) --</option>';
+        } else {
+          masterExca.forEach(x => {
+            const isSelected = (curVal && x.operator.toLowerCase() === curVal.toLowerCase()) ? ' selected' : '';
+            const alatInfo = x.alat ? ' (' + x.alat + ')' : '';
+            optHtml += `<option value="${x.operator}"${isSelected}>${x.operator}${alatInfo}</option>`;
+          });
+        }
+        sel.innerHTML = optHtml;
+      }
+
       // Update Datalist
       const dlAlat = document.getElementById('alatList');
       const dlOpr = document.getElementById('oprList');
       if(dlAlat) dlAlat.innerHTML = [...new Set(masterExca.map(x => x.alat))].map(a => `<option value="${a}">`).join('');
       if(dlOpr) dlOpr.innerHTML = [...new Set(masterExca.map(x => x.operator))].map(o => `<option value="${o}">`).join('');
+    }
+
+    function handleExaSelectChange(val) {
+      if (!val) {
+        document.getElementById('exaAlat').value = '';
+        autofillHmPrev('', 'exaHmPrev');
+        return;
+      }
+      const found = masterExca.find(x => (x.operator || '').toUpperCase().trim() === val.toUpperCase().trim());
+      if (found) {
+        document.getElementById('exaAlat').value = found.alat || '';
+        autofillHmPrev(found.operator, 'exaHmPrev');
+      }
+      // Auto-fill retase from 10 Roda summary
+      try {
+        const summary = getExcaRetaseSummary();
+        const matched = summary[val.toUpperCase().trim()];
+        const retaseInput = document.getElementById('exaRetase');
+        if (matched && retaseInput) {
+          retaseInput.value = matched.total;
+        }
+      } catch(e) {}
+    }
+
+    // ============================================
+    // MASTER LOADER FUNCTIONS
+    // ============================================
+    function renderMasterLoader() {
+      const tbody = document.getElementById('masterLoaderTable');
+      if(tbody) {
+        tbody.innerHTML = '';
+        masterLoader.forEach((item, i) => {
+          tbody.innerHTML += `<tr>
+            <td>${item.nama}</td>
+            <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterLoader(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterLoader(${i})">Hapus</button></td>
+          </tr>`;
+        });
+      }
+
+      // Populate Select Dropdown in Loader form
+      const sel = document.getElementById('loaderOperator');
+      if (sel) {
+        const curVal = sel.value;
+        let optHtml = '<option value="">-- Pilih Operator Loader --</option>';
+        if (masterLoader.length === 0) {
+          optHtml = '<option value="">-- Belum ada operator (tambah di tab Karyawan) --</option>';
+        } else {
+          masterLoader.forEach(x => {
+            const isSelected = (curVal && x.nama.toLowerCase() === curVal.toLowerCase()) ? ' selected' : '';
+            optHtml += `<option value="${x.nama}"${isSelected}>${x.nama}</option>`;
+          });
+        }
+        sel.innerHTML = optHtml;
+      }
+    }
+
+    function addMasterLoader() {
+      const nama = document.getElementById('masterNamaLoader').value.trim();
+      if (!nama) { showToast('Isi nama operator loader!', 'error'); return; }
+      masterLoader.push({ nama });
+      document.getElementById('masterNamaLoader').value = '';
+      renderMasterLoader();
+      saveMasterData();
+    }
+
+    function deleteMasterLoader(idx) {
+      if(confirm('Hapus operator loader ini?')) {
+        masterLoader.splice(idx, 1);
+        renderMasterLoader();
+        saveMasterData();
+      }
+    }
+
+    function editMasterLoader(idx) {
+      const item = masterLoader[idx];
+      if (!item) return;
+      const newNama = prompt('Edit nama operator loader:', item.nama);
+      if (newNama && newNama.trim()) {
+        masterLoader[idx] = { nama: newNama.trim() };
+        renderMasterLoader();
+        saveMasterData();
+      }
     }
 
     function addMasterExca() {
@@ -1887,15 +2016,33 @@ async function saveMasterData() {
 
     function renderMasterRoda10() {
       const tbody = document.getElementById('masterRoda10Table');
-      if(!tbody) return;
-      tbody.innerHTML = '';
-      masterRoda10.forEach((item, i) => {
-        tbody.innerHTML += `<tr>
-          <td>${item.nama}</td>
-          <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterRoda10(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterRoda10(${i})">Hapus</button></td>
-        </tr>`;
-      });
-      // Update Datalist
+      if(tbody) {
+        tbody.innerHTML = '';
+        masterRoda10.forEach((item, i) => {
+          tbody.innerHTML += `<tr>
+            <td>${item.nama}</td>
+            <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.25rem 0.5rem;font-size:11px;" onclick="editMasterRoda10(${i})">✏️ Edit</button><button class="btn" style="background:var(--danger);padding:0.25rem 0.5rem;font-size:11px;" onclick="deleteMasterRoda10(${i})">Hapus</button></td>
+          </tr>`;
+        });
+      }
+
+      // Populate Select Dropdown for 10 Roda Sopir
+      const sel = document.getElementById('roda10Sopir');
+      if (sel) {
+        const curVal = sel.value;
+        let optHtml = '<option value="">-- Pilih Sopir 10 Roda --</option>';
+        if (masterRoda10.length === 0) {
+          optHtml = '<option value="">-- Belum ada sopir (tambah di tab Karyawan) --</option>';
+        } else {
+          masterRoda10.forEach(x => {
+            const isSelected = (curVal && x.nama.toLowerCase() === curVal.toLowerCase()) ? ' selected' : '';
+            optHtml += `<option value="${x.nama}"${isSelected}>${x.nama}</option>`;
+          });
+        }
+        sel.innerHTML = optHtml;
+      }
+
+      // Update Datalist if exists
       const dl = document.getElementById('roda10List');
       if(dl) dl.innerHTML = masterRoda10.map(x => `<option value="${x.nama}">`).join('');
     }
@@ -2219,16 +2366,17 @@ async function saveMasterData() {
 
       const roda10Sopir = document.getElementById('roda10Sopir');
       if (roda10Sopir) {
+        roda10Sopir.addEventListener('change', function(e) {
+          if (e.target.value) {
+            const firstInput = document.getElementById('r10_sp') || document.getElementById('roda10Retase');
+            if (firstInput) firstInput.focus();
+          }
+        });
         roda10Sopir.addEventListener('keydown', function(e) {
           if (e.key === 'Enter') {
             e.preventDefault();
-            const val = e.target.value.toLowerCase().trim();
-            if(!val) return;
-            const found = masterRoda10.find(x => x.nama.toLowerCase().startsWith(val));
-            if(found) {
-              e.target.value = found.nama;
-              document.getElementById('r10_sp').focus(); // Jump to first retase input
-            }
+            const firstInput = document.getElementById('r10_sp') || document.getElementById('roda10Retase');
+            if (firstInput) firstInput.focus();
           }
         });
       }
@@ -2636,7 +2784,15 @@ async function saveMasterData() {
 
       const sumber = document.getElementById('loaderSumber').value;
 
-      if (!operator) { showToast('Pilih/ketik nama operator!', 'error'); return; }
+      if (!operator) { showToast('Pilih nama operator loader!', 'error'); return; }
+      const getBase = name => (name || '').replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+      const baseOp = getBase(operator);
+      const isValidLoader = masterLoader.some(x => getBase(x.nama) === baseOp);
+      if (!isValidLoader) {
+        showToast('Gagal: Operator Loader "' + baseOp + '" tidak terdaftar di Karyawan!', 'error');
+        alert('GAGAL INPUT:\nOperator Loader "' + baseOp + '" tidak sesuai dengan data di Karyawan/Unit!\n\nHarap daftarkan di tab Karyawan terlebih dahulu.');
+        return;
+      }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
       const hmIsiFloat = parseFloat(hmIsi) || 0;
@@ -2731,6 +2887,13 @@ async function saveMasterData() {
       const {jirgen, liter} = parseInput('exaInput');
       const isFull = document.getElementById('exaIsFull').checked;
 
+      if (!operator) { showToast('Pilih operator excavator!', 'error'); return; }
+      const isValidExca = masterExca.some(x => (x.operator || '').toUpperCase().trim() === operator.toUpperCase().trim());
+      if (!isValidExca) {
+        showToast('Gagal: Operator Exca "' + operator + '" tidak terdaftar di Karyawan!', 'error');
+        alert('GAGAL INPUT:\nOperator Exca "' + operator + '" tidak sesuai dengan data di Karyawan/Unit!\n\nHarap daftarkan di tab Karyawan terlebih dahulu.');
+        return;
+      }
       if (!alat) { showToast('Isi nama alat!', 'error'); return; }
       if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
 
@@ -2842,7 +3005,13 @@ async function saveMasterData() {
       const retaseItemsCheck = getRetaseExcaRows();
       const hasAnyRetase = isAnyRetaseFilled || retaseBiasa !== '' || retaseFull !== '' || retaseItemsCheck.length > 0;
 
-      if (!sopir) { showToast('Isi nama sopir!', 'error'); return; }
+      if (!sopir) { showToast('Pilih nama sopir 10 Roda!', 'error'); return; }
+      const isValidR10 = masterRoda10.some(x => x.nama.toUpperCase().trim() === sopir.toUpperCase().trim());
+      if (!isValidR10) {
+        showToast('Gagal: Sopir 10 Roda "' + sopir + '" tidak terdaftar di Karyawan!', 'error');
+        alert('GAGAL INPUT:\nSopir 10 Roda "' + sopir + '" tidak sesuai dengan data di Karyawan/Unit!\n\nHarap daftarkan di tab Karyawan terlebih dahulu.');
+        return;
+      }
       if (jirgen === 0 && liter === 0 && !hasAnyRetase) { 
         showToast('Isi retase atau jumlah solar!', 'error'); return; 
       }
@@ -3148,6 +3317,25 @@ async function saveMasterData() {
       return sp + nd + pasir + sirtu + kosongan + pembuangan + lansirSetengah + lansirSatu + retaseBiasa;
     }
 
+    // Realtime Synchronization between 10 Roda and Exca records
+    function syncExcaRetaseWith10Roda() {
+      const summary = getExcaRetaseSummary();
+      let changed = false;
+      (data.exa || []).forEach(item => {
+        const opUpper = (item.operator || '').toUpperCase().trim();
+        if (summary[opUpper] !== undefined) {
+          const auto10R = summary[opUpper].total;
+          if (item.retase !== auto10R) {
+            item.retase = auto10R;
+            changed = true;
+          }
+        }
+      });
+      if (changed) {
+        saveData();
+      }
+    }
+
     function getExcaRetaseSummary() {
       const summary = {}; // { "ANCI": { total: 5, sopirs: { "BAKRI": 3, ... } }, "IWAN": { ... } }
       (data.roda10 || []).forEach(truck => {
@@ -3322,7 +3510,16 @@ async function saveMasterData() {
       const item = data.roda10[idx];
       if (!item) return;
       
-      document.getElementById('roda10Sopir').value = item.sopir || '';
+      const sopirSelect = document.getElementById('roda10Sopir');
+      if (sopirSelect) {
+        if (item.sopir && !Array.from(sopirSelect.options).some(o => o.value.toLowerCase() === item.sopir.toLowerCase())) {
+          const opt = document.createElement('option');
+          opt.value = item.sopir;
+          opt.textContent = item.sopir;
+          sopirSelect.appendChild(opt);
+        }
+        sopirSelect.value = item.sopir || '';
+      }
       document.getElementById('roda10Sumber').value = item.sumber || 'Genset';
       document.getElementById('roda10Retase').value = item.retase !== undefined && !item.retaseObj ? item.retase : ''; // If there's an obj, retase is probably calculated, so keep blank
       document.getElementById('roda10RetaseFull').value = item.retaseFull !== undefined ? item.retaseFull : '';
@@ -3510,15 +3707,8 @@ async function saveMasterData() {
           <td>${(() => {
             const summary = getExcaRetaseSummary();
             const opUpper = (item.operator || '').toUpperCase().trim();
-            const auto10R = summary[opUpper] ? summary[opUpper].total : 0;
-            if (item.retase && auto10R && item.retase !== auto10R) {
-              return '<strong>' + item.retase + '</strong> <span style="font-size:10px; color:var(--accent);">(10R: ' + auto10R + ')</span>';
-            } else if (item.retase) {
-              return '<strong>' + item.retase + '</strong>';
-            } else if (auto10R) {
-              return '<strong style="color:var(--accent);">' + auto10R + '</strong> <span style="font-size:9px; color:var(--text-secondary);">(10R)</span>';
-            }
-            return '-';
+            const liveRet = summary[opUpper] !== undefined ? summary[opUpper].total : (item.retase || '-');
+            return '<strong style="color:var(--accent); font-size:14px;">' + liveRet + '</strong>';
           })()}</td>
           <td>${item.retaseFull || '-'}</td>
           <td>
@@ -3662,8 +3852,12 @@ async function saveMasterData() {
     // RENDER ALL
     // ============================================
     function renderAll() {
+      renderMasterExca();
+      renderMasterLoader();
+      renderMasterRoda10();
       renderMasuk();
       renderLoader();
+      syncExcaRetaseWith10Roda();
       renderExa();
       renderRoda10();
       renderPabrik();
@@ -3888,6 +4082,7 @@ async function saveMasterData() {
       checkSmartError(stockAkhir, masukTambang, keluarTambangTruk, masukPabrik, keluarPabrikTruk);
 
       renderAnalisaBBM();
+      syncExcaRetaseWith10Roda();
       renderExcaRetaseSummary();
       if(document.getElementById('aktualGensetInput').value) hitungPencocokanGenset();
     }
@@ -4222,10 +4417,11 @@ async function saveMasterData() {
             wsKeluar.getCell('F' + row).value = item.selisihHm ? item.selisihHm.toFixed(1) : '';
             wsKeluar.getCell('G' + row).value = item.waktu;
             
-            // Retase: item.retase OR from 10 Roda summary
+            // Retase: Selalu sinkron 100% dengan rekap 10 Roda untuk operator ini!
             const opUpper = (item.operator || '').toUpperCase().trim();
-            const from10R = excaSummary[opUpper] ? excaSummary[opUpper].total : '';
-            wsKeluar.getCell('H' + row).value = (item.retase !== '' && item.retase !== undefined && item.retase !== 0) ? item.retase : from10R;
+            const from10R = excaSummary[opUpper] !== undefined ? excaSummary[opUpper].total : '';
+            const finalExcaRet = from10R !== '' ? from10R : (item.retase || '');
+            wsKeluar.getCell('H' + row).value = finalExcaRet;
             wsKeluar.getCell('I' + row).value = item.retaseFull;
             const airText = formatJirgenLiter(item.jirgen, item.liter);
             wsKeluar.getCell('J' + row).value = (item.isFull || (item.jirgenFull > 0 || item.literFull > 0)) ? `${airText} ( FULL )` : airText;
