@@ -3890,7 +3890,7 @@ async function saveMasterData() {
       };
       
       const sumRetase = (retaseObj.sp || 0) + (retaseObj.nd || 0) + (retaseObj.pasir || 0) + 
-                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0) + (retaseObj.lansirSetengah || 0) + (retaseObj.lansirSatu || 0);
+                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0);
 
       // Parse air dari Genset dan Truk secara terpisah
       const gensetInputEl = document.getElementById('roda10InputGenset');
@@ -4208,11 +4208,14 @@ async function saveMasterData() {
 
       RETASE_MATERIAL_DEFS.forEach(m => {
         let rowSum = 0;
+        const isLansir = (m.key === 'lansirSetengah' || m.key === 'lansirSatu');
         excaList.forEach(op => {
           const input = document.getElementById('cmat_' + op + '_' + m.key);
           const val = parseInt(input?.value) || 0;
           rowSum += val;
-          excaTotals[op] += val;
+          if (!isLansir) {
+            excaTotals[op] += val;
+          }
           if (val > 0) {
             excaMatBreakdowns[op].push(m.label + ' ' + val);
           }
@@ -4224,7 +4227,9 @@ async function saveMasterData() {
         }
         const rowTotEl = document.getElementById('cmat_rowTot_' + m.key);
         if (rowTotEl) rowTotEl.textContent = rowSum;
-        grandTotal += rowSum;
+        if (!isLansir) {
+          grandTotal += rowSum;
+        }
       });
 
       excaList.forEach(op => {
@@ -4336,18 +4341,20 @@ async function saveMasterData() {
 
         if (currentCampurMode === 'rinci') {
           excaList.forEach(op => {
-            let opTotal = 0;
+            let opRetase = 0;
             const opMats = {};
             RETASE_MATERIAL_DEFS.forEach(m => {
               const input = document.getElementById('cmat_' + op + '_' + m.key);
               const val = parseInt(input?.value) || 0;
               if (val > 0) {
                 opMats[m.key] = val;
-                opTotal += val;
+                if (m.key !== 'lansirSetengah' && m.key !== 'lansirSatu') {
+                  opRetase += val;
+                }
               }
             });
-            if (opTotal > 0) {
-              breakdown[op] = opTotal;
+            if (opRetase > 0 || Object.keys(opMats).length > 0) {
+              breakdown[op] = opRetase;
               excaMaterials[op] = opMats;
             }
           });
@@ -4510,10 +4517,8 @@ async function saveMasterData() {
       const sirtu = parseInt(document.getElementById('r10_sirtu')?.value) || 0;
       const kosongan = parseInt(document.getElementById('r10_kosongan')?.value) || 0;
       const pembuangan = parseInt(document.getElementById('r10_pembuangan')?.value) || 0;
-      const lansirSetengah = parseInt(document.getElementById('r10_lansirSetengah')?.value) || 0;
-      const lansirSatu = parseInt(document.getElementById('r10_lansirSatu')?.value) || 0;
       const retaseBiasa = parseInt(document.getElementById('roda10Retase')?.value) || 0;
-      return sp + nd + pasir + sirtu + kosongan + pembuangan + lansirSetengah + lansirSatu + retaseBiasa;
+      return sp + nd + pasir + sirtu + kosongan + pembuangan + retaseBiasa;
     }
 
     // Realtime Synchronization between 10 Roda and Exca records
@@ -4541,6 +4546,25 @@ async function saveMasterData() {
     function getExcaRetaseSummary() {
       const summary = {}; // { "ANCI": { total: 5, sopirs: { "BAKRI": 3, ... } }, "IWAN": { ... } }
       (data.roda10 || []).forEach(truck => {
+        // Jika terdapat rincian material per exca (excaMaterials), hitung retase murni tanpa lansir:
+        if (truck.excaMaterials && Object.keys(truck.excaMaterials).length > 0) {
+          Object.entries(truck.excaMaterials).forEach(([exca, mats]) => {
+            const excaUpper = (exca || '').toUpperCase().trim();
+            if (!excaUpper) return;
+            let count = 0;
+            Object.entries(mats || {}).forEach(([mKey, val]) => {
+              const k = mKey.toLowerCase();
+              if (k !== 'lansirsetengah' && k !== 'lansirsatu' && !k.startsWith('lansir')) {
+                count += parseInt(val) || 0;
+              }
+            });
+            if (!summary[excaUpper]) summary[excaUpper] = { total: 0, sopirs: {} };
+            summary[excaUpper].total += count;
+            summary[excaUpper].sopirs[truck.sopir] = (summary[excaUpper].sopirs[truck.sopir] || 0) + count;
+          });
+          return;
+        }
+
         const rawBreakdown = truck.excaBreakdown || retaseItemsToBreakdown(truck.retaseItems);
         Object.entries(rawBreakdown).forEach(([exca, count]) => {
           const excaUpper = (exca || '').toUpperCase().trim();
@@ -4960,7 +4984,7 @@ async function saveMasterData() {
         let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
         let retaseTotal = item.retaseObj ? (
           (item.retaseObj.sp || 0) + (item.retaseObj.nd || 0) + (item.retaseObj.pasir || 0) + 
-          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0) + (item.retaseObj.lansirSetengah || 0) + (item.retaseObj.lansirSatu || 0)
+          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0)
         ) : 0;
         let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
@@ -5935,9 +5959,9 @@ async function saveMasterData() {
             const targetRow = (idx === 0) ? 25 : 26;
             const prefix = (idx === 0) ? 'Ket: ' : '     ';
             
-            const cleanOp = opName.charAt(0).toUpperCase() + opName.slice(1).toLowerCase();
+            const cleanOp = opName.toUpperCase().trim();
             const richParts = [];
-            richParts.push({ text: `${prefix}${cleanOp} `, font: { bold: true, size: 9.5 } });
+            richParts.push({ text: `${prefix}[ ${cleanOp} ] : `, font: { bold: true, size: 9.5 } });
 
             const matList = Object.entries(mats);
             matList.forEach(([label, count], mIdx) => {
