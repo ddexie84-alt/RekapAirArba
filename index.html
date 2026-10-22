@@ -1013,6 +1013,11 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
         <div class="stock-value pulse" id="stockGenset">0</div>
         <div class="stock-unit">jirgen</div>
       </div>
+      <div class="stock-item" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px;" title="Selisih Air Masuk (Tambang/Pabrik) dengan Air Keluar Truk. Bernilai 0 (Hijau) jika semua air masuk sudah tercatat di pengeluaran.">
+        <div class="stock-label">Selisih</div>
+        <div class="stock-value" id="stockSelisih" style="color:#10b981; font-weight:800;">0</div>
+        <div class="stock-unit" id="stockSelisihUnit">jirgen</div>
+      </div>
       <div class="stock-item" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px;">
         <div class="stock-label">Genset (Real)</div>
         <div class="stock-value" id="stockGensetReal" style="color:#60a5fa; font-weight:700;">0</div>
@@ -1022,7 +1027,6 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
         <div class="stock-label">Minus Real</div>
         <div class="stock-value" id="stockMinusReal" style="color:#f87171; font-weight:700;">0</div>
         <div class="stock-unit">jirgen</div>
-        <span id="stockSelisih" style="display:none;">0</span>
       </div>
     </div>
 
@@ -1413,22 +1417,66 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
                 </label>
 
                 <div id="campurExcaInputs" style="display:none; margin-top:10px; padding:10px; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <span style="font-size:11px; color:var(--text-secondary);">Isi pembagian ritase:</span>
-                    <button type="button" class="btn" style="padding:2px 8px; font-size:11px; background:var(--accent); color:white;" onclick="autoSplitCampur()">⚖️ Bagi Rata</button>
+                  <!-- Mode Selector -->
+                  <div style="display:flex; gap:6px; margin-bottom:10px; background:var(--bg-input); padding:3px; border-radius:6px;">
+                    <button type="button" id="btnCampurModeRinci" class="btn btn-primary" onclick="setCampurMode('rinci')" style="flex:1; font-size:11.5px; padding:6px 4px; font-weight:700; background:var(--accent); color:#fff;">
+                      📋 Rinci per Material (Akurat)
+                    </button>
+                    <button type="button" id="btnCampurModeCepat" class="btn" onclick="setCampurMode('cepat')" style="flex:1; font-size:11.5px; padding:6px 4px; background:transparent; color:var(--text-secondary); font-weight:normal;">
+                      ⚡ Angka Saja (Bagi Cepat)
+                    </button>
                   </div>
-                  <div id="campurExcaGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div>
-                      <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 ANCI</label>
-                      <input type="number" class="form-input" id="campurExca_ANCI" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+
+                  <!-- 1. Mode Rinci (Matrix Table) -->
+                  <div id="campurMatrixSection" style="display:block;">
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">
+                      💡 Masukkan jumlah rit per material untuk <strong>ANCI</strong> dan <strong>IWAN</strong>. Nilai total otomatis sinkron ke form atas:
                     </div>
-                    <div>
-                      <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 IWAN</label>
-                      <input type="number" class="form-input" id="campurExca_IWAN" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+                    <div style="overflow-x:auto; margin-bottom:8px;">
+                      <table id="campurMatrixTable" style="width:100%; border-collapse:collapse; font-size:12px; background:var(--surface); border-radius:6px; overflow:hidden; border:1px solid var(--border);">
+                        <thead>
+                          <tr id="campurMatrixHeadRow" style="background:rgba(255,255,255,0.04); border-bottom:1px solid var(--border);">
+                            <th style="padding:6px 8px; text-align:left; font-size:11px;">Material</th>
+                            <th style="padding:6px 4px; text-align:center; color:#34d399; font-size:11px;">🚜 ANCI</th>
+                            <th style="padding:6px 4px; text-align:center; color:#60a5fa; font-size:11px;">🚜 IWAN</th>
+                            <th style="padding:6px 6px; text-align:center; font-size:11px; color:var(--text-secondary);">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody id="campurMatrixBody">
+                          <!-- Populated dynamically by renderCampurMatrix() -->
+                        </tbody>
+                        <tfoot>
+                          <tr id="campurMatrixFootRow" style="font-weight:700; background:rgba(255,255,255,0.04); border-top:2px solid var(--border);">
+                            <td style="padding:6px 8px; font-size:11px;">TOTAL</td>
+                            <td id="campurMatrixTot_ANCI" style="padding:6px 4px; text-align:center; color:#34d399; font-size:12px;">0 Rit</td>
+                            <td id="campurMatrixTot_IWAN" style="padding:6px 4px; text-align:center; color:#60a5fa; font-size:12px;">0 Rit</td>
+                            <td id="campurMatrixTot_ALL" style="padding:6px 6px; text-align:center; color:var(--accent); font-size:12px;">0 Rit</td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
+                    <div id="campurMatrixSummary" style="font-size:11px; font-weight:600; color:var(--text-secondary); margin-top:4px;"></div>
                   </div>
-                  <div id="campurExcaExtraGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;"></div>
-                  <div id="campurStatusNote" style="font-size:11px; margin-top:8px; font-weight:600; color:var(--text-secondary);"></div>
+
+                  <!-- 2. Mode Cepat (Simple Totals) -->
+                  <div id="campurCepatSection" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="font-size:11px; color:var(--text-secondary);">Isi pembagian total ritase:</span>
+                      <button type="button" class="btn" style="padding:2px 8px; font-size:11px; background:var(--accent); color:white;" onclick="autoSplitCampur()">⚖️ Bagi Rata</button>
+                    </div>
+                    <div id="campurExcaGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                      <div>
+                        <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 ANCI</label>
+                        <input type="number" class="form-input" id="campurExca_ANCI" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+                      </div>
+                      <div>
+                        <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 IWAN</label>
+                        <input type="number" class="form-input" id="campurExca_IWAN" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+                      </div>
+                    </div>
+                    <div id="campurExcaExtraGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;"></div>
+                    <div id="campurStatusNote" style="font-size:11px; margin-top:8px; font-weight:600; color:var(--text-secondary);"></div>
+                  </div>
                 </div>
               </div>
 
@@ -2334,6 +2382,83 @@ async function saveMasterData() {
       return (namaBulan[monthIdx] || parts[1]) + ' ' + year;
     }
 
+        function parseLoaderOperator(name) {
+      name = (name || '').trim();
+      let match = name.match(/^(.*?)\s*[\(\[]\s*(?:opr\.?\s*)?(.*?)\s*[\)\]]$/i);
+      if (!match) {
+        match = name.match(/^(.*?)\s*-\s*(?:opr\.?\s*)?(.*?)$/i);
+      }
+      if (match) {
+        const owner = match[1].trim();
+        let sub = match[2].trim();
+        if (sub) {
+          if (!sub.toLowerCase().startsWith('opr')) {
+            sub = 'Opr ' + sub;
+          }
+          return { owner, sub, isCadangan: true };
+        }
+      }
+      return { owner: name, sub: null, isCadangan: false };
+    }
+
+    function renderLoaderRowsHtml(listLoader, emptyMsg = 'Belum ada data Loader di bulan ini.') {
+      if (!listLoader || listLoader.length === 0) {
+        return '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:16px;">' + emptyMsg + '</td></tr>';
+      }
+      return listLoader.map((item, idx) => {
+        const hasSubRows = Object.keys(item.subs || {}).length > 1 || Object.values(item.subs || {}).some(s => s.isCadangan);
+
+        if (!hasSubRows) {
+          return `
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="text-align:center; color:var(--text-secondary); font-size:12px;">${idx + 1}</td>
+              <td style="font-weight:600;">${item.operator}</td>
+              <td style="text-align:right; font-weight:700; color:var(--accent);">${formatFromLiters(item.totalLiters)}</td>
+              <td style="text-align:right; color:var(--text-secondary);">${item.totalLiters} L</td>
+              <td style="text-align:right; font-weight:600; color:#fbbf24;">${item.totalJam.toFixed(1)} Jam</td>
+              <td style="text-align:center;"><span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:11px;">${item.count}x</span></td>
+            </tr>
+          `;
+        }
+
+        const sortedSubs = Object.values(item.subs).sort((a, b) => {
+          if (a.isCadangan === b.isCadangan) return b.totalLiters - a.totalLiters;
+          return a.isCadangan ? 1 : -1;
+        });
+
+        const parentRow = `
+          <tr style="background:rgba(255,255,255,0.02); border-top: 1px solid var(--border);">
+            <td style="text-align:center; font-weight:700; color:var(--text-primary); font-size:12px;">${idx + 1}</td>
+            <td style="font-weight:700; color:var(--text-primary);">
+              ${item.operator} 
+              <span style="font-size:11px; font-weight:500; color:var(--text-muted); margin-left:4px;">(Total Unit)</span>
+            </td>
+            <td style="text-align:right; font-weight:700; color:var(--accent);">${formatFromLiters(item.totalLiters)}</td>
+            <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${item.totalLiters} L</td>
+            <td style="text-align:right; font-weight:700; color:#fbbf24;">${item.totalJam.toFixed(1)} Jam</td>
+            <td style="text-align:center;"><span class="badge" style="background:rgba(245,158,11,0.25); color:#fbbf24; font-weight:700; font-size:11px;">${item.count}x</span></td>
+          </tr>
+        `;
+
+        const subRows = sortedSubs.map(sub => `
+          <tr style="background: ${sub.isCadangan ? 'rgba(59,130,246,0.06)' : 'transparent'}; border-bottom: 1px dashed rgba(255,255,255,0.07); font-size:12px;">
+            <td style="border:none;"></td>
+            <td style="padding-left:22px; color:${sub.isCadangan ? '#60a5fa' : 'var(--text-secondary)'};">
+              <span style="opacity:0.6; margin-right:4px;">↳</span>
+              <span style="font-weight:${sub.isCadangan ? '600' : 'normal'};">${sub.label}</span>
+              ${sub.isCadangan ? '<span class="badge" style="background:rgba(59,130,246,0.2); color:#60a5fa; font-size:10px; margin-left:6px; padding:1px 6px;">Cadangan</span>' : ''}
+            </td>
+            <td style="text-align:right; color:${sub.isCadangan ? '#93c5fd' : 'var(--text-secondary)'}; font-weight:600;">${formatFromLiters(sub.totalLiters)}</td>
+            <td style="text-align:right; color:var(--text-muted);">${sub.totalLiters} L</td>
+            <td style="text-align:right; color:var(--text-muted);">${sub.totalJam.toFixed(1)} Jam</td>
+            <td style="text-align:center;"><span style="color:var(--text-muted); font-size:11px;">${sub.count}x</span></td>
+          </tr>
+        `).join('');
+
+        return parentRow + subRows;
+      }).join('');
+    }
+
     function calculateMonthlyStats(monthDataMap) {
       const stats10Roda = {};
       const statsExca = {};
@@ -2399,20 +2524,42 @@ async function saveMasterData() {
             grandExcaCount += 1;
           });
 
-          // 3. Loader
+          // 3. Loader (Rollup ke pemilik loader asli jika ada operator cadangan Daniel)
           (dayData.loader || []).forEach(item => {
-            const operator = (item.operator || '').trim() || 'Tanpa Nama';
+            const rawOp = (item.operator || '').trim() || 'Tanpa Nama';
+            const parsed = parseLoaderOperator(rawOp);
+            const owner = parsed.owner || 'Tanpa Nama';
             const liters = toTotalLiters(item.jirgen, item.liter);
             const hmIsi = parseFloat(item.hmIsi) || 0;
             const hmPrev = parseFloat(item.hmPrev) || 0;
             const jam = hmIsi > hmPrev ? (hmIsi - hmPrev) : (parseFloat(item.selisihHm) || 0);
 
-            if (!statsLoader[operator]) {
-              statsLoader[operator] = { operator, totalLiters: 0, totalJam: 0, count: 0 };
+            if (!statsLoader[owner]) {
+              statsLoader[owner] = {
+                operator: owner,
+                totalLiters: 0,
+                totalJam: 0,
+                count: 0,
+                subs: {}
+              };
             }
-            statsLoader[operator].totalLiters += liters;
-            statsLoader[operator].totalJam += jam;
-            statsLoader[operator].count += 1;
+            statsLoader[owner].totalLiters += liters;
+            statsLoader[owner].totalJam += jam;
+            statsLoader[owner].count += 1;
+
+            const subKey = parsed.isCadangan ? parsed.sub : (owner + ' (Utama)');
+            if (!statsLoader[owner].subs[subKey]) {
+              statsLoader[owner].subs[subKey] = {
+                label: subKey,
+                isCadangan: parsed.isCadangan,
+                totalLiters: 0,
+                totalJam: 0,
+                count: 0
+              };
+            }
+            statsLoader[owner].subs[subKey].totalLiters += liters;
+            statsLoader[owner].subs[subKey].totalJam += jam;
+            statsLoader[owner].subs[subKey].count += 1;
 
             grandLoaderLiters += liters;
             grandLoaderJam += jam;
@@ -2569,16 +2716,7 @@ async function saveMasterData() {
           tbLoader.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:16px;">Belum ada data Loader di bulan ini.</td></tr>';
           if (tfLoader) tfLoader.innerHTML = '';
         } else {
-          tbLoader.innerHTML = stats.listLoader.map((item, idx) => `
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="text-align:center; color:var(--text-secondary);">${idx + 1}</td>
-              <td style="font-weight:600;">${item.operator}</td>
-              <td style="text-align:right; font-weight:700; color:var(--accent);">${formatFromLiters(item.totalLiters)}</td>
-              <td style="text-align:right; color:var(--text-secondary);">${item.totalLiters} L</td>
-              <td style="text-align:right; font-weight:600; color:#fbbf24;">${item.totalJam.toFixed(1)} Jam</td>
-              <td style="text-align:center;"><span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:11px;">${item.count}x</span></td>
-            </tr>
-          `).join('');
+          tbLoader.innerHTML = renderLoaderRowsHtml(stats.listLoader, 'Belum ada data Loader di bulan ini.');
           if (tfLoader) {
             tfLoader.innerHTML = `
               <tr>
@@ -2821,16 +2959,7 @@ async function saveMasterData() {
                 </tr>
               </thead>
               <tbody>
-                ${stats.listLoader.length === 0 ? '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:16px;">Tidak ada transaksi Loader.</td></tr>' : stats.listLoader.map((item, idx) => `
-                  <tr style="border-bottom: 1px solid var(--border);">
-                    <td style="text-align:center; color:var(--text-secondary);">${idx + 1}</td>
-                    <td style="font-weight:600;">${item.operator}</td>
-                    <td style="text-align:right; font-weight:700; color:var(--accent);">${formatFromLiters(item.totalLiters)}</td>
-                    <td style="text-align:right; color:var(--text-secondary);">${item.totalLiters} L</td>
-                    <td style="text-align:right; font-weight:600; color:#fbbf24;">${item.totalJam.toFixed(1)} Jam</td>
-                    <td style="text-align:center;"><span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:11px;">${item.count}x</span></td>
-                  </tr>
-                `).join('')}
+                ${renderLoaderRowsHtml(stats.listLoader, 'Tidak ada transaksi Loader.')}
               </tbody>
               <tfoot style="font-weight:bold; background:rgba(255,255,255,0.05);">
                 <tr>
@@ -3697,7 +3826,7 @@ async function saveMasterData() {
       };
       
       const sumRetase = (retaseObj.sp || 0) + (retaseObj.nd || 0) + (retaseObj.pasir || 0) + 
-                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0);
+                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0) + (retaseObj.lansirSetengah || 0) + (retaseObj.lansirSatu || 0);
 
       // Parse air dari Genset dan Truk secara terpisah
       const gensetInputEl = document.getElementById('roda10InputGenset');
@@ -3769,6 +3898,7 @@ async function saveMasterData() {
         liter,
         retaseItems,
         excaBreakdown: excaData.excaBreakdown,
+        excaMaterials: excaData.excaMaterials,
         excaMode: excaData.mode
       });
       saveData();
@@ -3850,6 +3980,212 @@ async function saveMasterData() {
         }
       });
       updateRoda10TotalDisplay();
+      renderCampurMatrix();
+    }
+
+    let currentCampurMode = 'rinci';
+
+    const RETASE_MATERIAL_DEFS = [
+      { key: 'sp', label: 'SP' },
+      { key: 'nd', label: 'ND' },
+      { key: 'pasir', label: 'Pasir Pasang' },
+      { key: 'sirtu', label: 'Sirtu' },
+      { key: 'kosongan', label: 'Kosongan' },
+      { key: 'pembuangan', label: 'Pembuangan' },
+      { key: 'lansirSetengah', label: 'Lansir 1/2 hari' },
+      { key: 'lansirSatu', label: 'Lansir 1 hari' }
+    ];
+
+    function getActiveCampurExcas() {
+      const list = ['ANCI', 'IWAN'];
+      if (Array.isArray(masterExca)) {
+        masterExca.forEach(e => {
+          const op = (e.operator || '').toUpperCase().trim();
+          if (op && !list.includes(op)) {
+            list.push(op);
+          }
+        });
+      }
+      return list;
+    }
+
+    function renderCampurMatrix() {
+      const body = document.getElementById('campurMatrixBody');
+      const thead = document.getElementById('campurMatrixHeadRow');
+      const tfoot = document.getElementById('campurMatrixFootRow');
+      if (!body || !thead || !tfoot) return;
+
+      const excaList = getActiveCampurExcas();
+      const colors = { 'ANCI': '#34d399', 'IWAN': '#60a5fa' };
+
+      // Render thead
+      let headHtml = '<th style="padding:6px 8px; text-align:left; font-size:11px;">Material</th>';
+      excaList.forEach(op => {
+        const col = colors[op] || '#fbbf24';
+        headHtml += '<th style="padding:6px 4px; text-align:center; color:' + col + '; font-size:11px;">🚜 ' + op + '</th>';
+      });
+      headHtml += '<th style="padding:6px 6px; text-align:center; font-size:11px; color:var(--text-secondary);">Total</th>';
+      thead.innerHTML = headHtml;
+
+      // Render tbody
+      let bodyHtml = '';
+      RETASE_MATERIAL_DEFS.forEach((m, idx) => {
+        const bgRow = (idx % 2 === 1) ? 'background:rgba(255,255,255,0.015);' : '';
+        bodyHtml += '<tr style="' + bgRow + ' border-bottom:1px solid rgba(255,255,255,0.05);">' +
+          '<td style="padding:5px 8px; font-weight:600; font-size:12px; color:var(--text-primary); white-space:nowrap;">' + m.label + '</td>';
+        
+        excaList.forEach(op => {
+          bodyHtml += '<td style="padding:3px 4px; text-align:center;">' +
+            '<input type="number" min="0" class="campur-mat-input form-input" id="cmat_' + op + '_' + m.key + '" data-exca="' + op + '" data-mat="' + m.key + '" placeholder="0" style="width:52px; text-align:center; padding:5px 2px; font-size:13px; font-weight:600;" oninput="syncMatrixToForm()">' +
+          '</td>';
+        });
+
+        bodyHtml += '<td id="cmat_rowTot_' + m.key + '" style="padding:5px 6px; text-align:center; font-weight:700; font-size:12px; color:var(--text-secondary);">0</td>' +
+        '</tr>';
+      });
+      body.innerHTML = bodyHtml;
+
+      // Render tfoot
+      let footHtml = '<td style="padding:6px 8px; font-size:11px;">TOTAL</td>';
+      excaList.forEach(op => {
+        const col = colors[op] || '#fbbf24';
+        footHtml += '<td id="campurMatrixTot_' + op + '" style="padding:6px 4px; text-align:center; color:' + col + '; font-weight:700; font-size:12px;">0 Rit</td>';
+      });
+      footHtml += '<td id="campurMatrixTot_ALL" style="padding:6px 6px; text-align:center; color:var(--accent); font-weight:700; font-size:12px;">0 Rit</td>';
+      tfoot.innerHTML = footHtml;
+    }
+
+    function setCampurMode(mode) {
+      currentCampurMode = mode;
+      const btnRinci = document.getElementById('btnCampurModeRinci');
+      const btnCepat = document.getElementById('btnCampurModeCepat');
+      const secRinci = document.getElementById('campurMatrixSection');
+      const secCepat = document.getElementById('campurCepatSection');
+
+      if (mode === 'rinci') {
+        if (btnRinci) {
+          btnRinci.className = 'btn btn-primary';
+          btnRinci.style.background = 'var(--accent)';
+          btnRinci.style.color = '#fff';
+          btnRinci.style.fontWeight = '700';
+        }
+        if (btnCepat) {
+          btnCepat.className = 'btn';
+          btnCepat.style.background = 'transparent';
+          btnCepat.style.color = 'var(--text-secondary)';
+          btnCepat.style.fontWeight = 'normal';
+        }
+        if (secRinci) secRinci.style.display = 'block';
+        if (secCepat) secCepat.style.display = 'none';
+        
+        renderCampurMatrix();
+        maybePrepopulateMatrixFromTop();
+        syncMatrixToForm();
+      } else {
+        if (btnCepat) {
+          btnCepat.className = 'btn btn-primary';
+          btnCepat.style.background = 'var(--accent)';
+          btnCepat.style.color = '#fff';
+          btnCepat.style.fontWeight = '700';
+        }
+        if (btnRinci) {
+          btnRinci.className = 'btn';
+          btnRinci.style.background = 'transparent';
+          btnRinci.style.color = 'var(--text-secondary)';
+          btnRinci.style.fontWeight = 'normal';
+        }
+        if (secRinci) secRinci.style.display = 'none';
+        if (secCepat) secCepat.style.display = 'block';
+        updateCampurStatus();
+      }
+    }
+
+    function maybePrepopulateMatrixFromTop() {
+      const excaList = getActiveCampurExcas();
+      
+      let hasAnyMatrixValue = false;
+      RETASE_MATERIAL_DEFS.forEach(m => {
+        excaList.forEach(op => {
+          const el = document.getElementById('cmat_' + op + '_' + m.key);
+          if (el && (parseInt(el.value) || 0) > 0) hasAnyMatrixValue = true;
+        });
+      });
+
+      if (!hasAnyMatrixValue) {
+        let hasTop = false;
+        RETASE_MATERIAL_DEFS.forEach(m => {
+          const topEl = document.getElementById('r10_' + m.key);
+          const val = parseInt(topEl?.value) || 0;
+          if (val > 0) {
+            hasTop = true;
+            const cEl = document.getElementById('cmat_ANCI_' + m.key);
+            if (cEl) cEl.value = val;
+          }
+        });
+        if (hasTop) {
+          syncMatrixToForm();
+        }
+      }
+    }
+
+    function syncMatrixToForm() {
+      const excaList = getActiveCampurExcas();
+      const excaTotals = {};
+      const excaMatBreakdowns = {};
+      excaList.forEach(op => {
+        excaTotals[op] = 0;
+        excaMatBreakdowns[op] = [];
+      });
+      let grandTotal = 0;
+
+      RETASE_MATERIAL_DEFS.forEach(m => {
+        let rowSum = 0;
+        excaList.forEach(op => {
+          const input = document.getElementById('cmat_' + op + '_' + m.key);
+          const val = parseInt(input?.value) || 0;
+          rowSum += val;
+          excaTotals[op] += val;
+          if (val > 0) {
+            excaMatBreakdowns[op].push(m.label + ' ' + val);
+          }
+        });
+
+        const topInput = document.getElementById('r10_' + m.key);
+        if (topInput) {
+          topInput.value = rowSum > 0 ? rowSum : '';
+        }
+        const rowTotEl = document.getElementById('cmat_rowTot_' + m.key);
+        if (rowTotEl) rowTotEl.textContent = rowSum;
+        grandTotal += rowSum;
+      });
+
+      excaList.forEach(op => {
+        const footEl = document.getElementById('campurMatrixTot_' + op);
+        if (footEl) footEl.textContent = excaTotals[op] + ' Rit';
+        const simpleInput = document.getElementById('campurExca_' + op);
+        if (simpleInput) simpleInput.value = excaTotals[op] > 0 ? excaTotals[op] : '';
+      });
+
+      const allEl = document.getElementById('campurMatrixTot_ALL');
+      if (allEl) allEl.textContent = grandTotal + ' Rit';
+
+      const sumEl = document.getElementById('campurMatrixSummary');
+      if (sumEl) {
+        if (grandTotal > 0) {
+          const parts = [];
+          excaList.forEach(op => {
+            if (excaTotals[op] > 0) {
+              const details = excaMatBreakdowns[op].join(', ');
+              parts.push('<strong>' + op + ' (' + excaTotals[op] + ' Rit):</strong> ' + details);
+            }
+          });
+          sumEl.innerHTML = '<div style="background:rgba(59,130,246,0.1); padding:6px 10px; border-radius:6px; border:1px solid rgba(59,130,246,0.2); color:#93c5fd;">' + parts.join(' &nbsp;|&nbsp; ') + '</div>';
+        } else {
+          sumEl.innerHTML = '';
+        }
+      }
+
+      updateRoda10TotalDisplay();
     }
 
     function toggleCampurExca() {
@@ -3857,7 +4193,7 @@ async function saveMasterData() {
       const campurDiv = document.getElementById('campurExcaInputs');
       if (selected && selected.value === 'campur') {
         if (campurDiv) campurDiv.style.display = 'block';
-        updateCampurStatus();
+        setCampurMode(currentCampurMode || 'rinci');
       } else {
         if (campurDiv) campurDiv.style.display = 'none';
       }
@@ -3908,37 +4244,64 @@ async function saveMasterData() {
       const total = getTotalRetaseFromForm();
       const lbl = document.getElementById('labelTotalRetaseRoda10');
       if (lbl) lbl.textContent = 'Total: ' + total + ' Rit';
-      updateCampurStatus();
+      if (currentCampurMode === 'cepat') {
+        updateCampurStatus();
+      }
     }
 
     function getRetaseExcaData(totalRetase) {
       const selected = document.querySelector('input[name="retaseExcaMode"]:checked');
-      if (!selected || selected.value === 'none') return { mode: 'none', excaBreakdown: {} };
+      if (!selected || selected.value === 'none') return { mode: 'none', excaBreakdown: {}, excaMaterials: {} };
       
       if (selected.value === 'campur') {
+        const excaList = getActiveCampurExcas();
         const breakdown = {};
-        const elAnci = document.getElementById('campurExca_ANCI');
-        const elIwan = document.getElementById('campurExca_IWAN');
-        const vAnci = parseInt(elAnci?.value) || 0;
-        const vIwan = parseInt(elIwan?.value) || 0;
-        if (vAnci > 0) breakdown['ANCI'] = vAnci;
-        if (vIwan > 0) breakdown['IWAN'] = vIwan;
+        const excaMaterials = {};
 
-        masterExca.forEach(e => {
-          const op = (e.operator || '').toUpperCase().trim();
-          if (op && op !== 'ANCI' && op !== 'IWAN') {
+        if (currentCampurMode === 'rinci') {
+          excaList.forEach(op => {
+            let opTotal = 0;
+            const opMats = {};
+            RETASE_MATERIAL_DEFS.forEach(m => {
+              const input = document.getElementById('cmat_' + op + '_' + m.key);
+              const val = parseInt(input?.value) || 0;
+              if (val > 0) {
+                opMats[m.key] = val;
+                opTotal += val;
+              }
+            });
+            if (opTotal > 0) {
+              breakdown[op] = opTotal;
+              excaMaterials[op] = opMats;
+            }
+          });
+        } else {
+          // Mode Cepat: angka saja
+          excaList.forEach(op => {
             const input = document.getElementById('campurExca_' + op);
             const val = parseInt(input?.value) || 0;
             if (val > 0) breakdown[op] = val;
-          }
-        });
-        return { mode: 'campur', excaBreakdown: breakdown };
+          });
+        }
+        return { mode: 'campur', excaBreakdown: breakdown, excaMaterials };
       }
       
       const excaName = selected.value.toUpperCase().trim();
       const breakdown = {};
       breakdown[excaName] = totalRetase || 0;
-      return { mode: excaName, excaName, excaBreakdown: breakdown };
+
+      // Single exca: all retase materials belong to this exca
+      const excaMaterials = {};
+      excaMaterials[excaName] = {};
+      RETASE_MATERIAL_DEFS.forEach(m => {
+        const el = document.getElementById('r10_' + m.key);
+        const val = parseInt(el?.value) || 0;
+        if (val > 0) {
+          excaMaterials[excaName][m.key] = val;
+        }
+      });
+
+      return { mode: excaName, excaName, excaBreakdown: breakdown, excaMaterials };
     }
 
     function retaseItemsToBreakdown(retaseItems) {
@@ -3970,14 +4333,35 @@ async function saveMasterData() {
           if (input) input.value = '';
         }
       });
+
+      const excaList = getActiveCampurExcas();
+      RETASE_MATERIAL_DEFS.forEach(m => {
+        excaList.forEach(op => {
+          const el = document.getElementById('cmat_' + op + '_' + m.key);
+          if (el) el.value = '';
+        });
+        const rowTot = document.getElementById('cmat_rowTot_' + m.key);
+        if (rowTot) rowTot.textContent = '0';
+      });
+      excaList.forEach(op => {
+        const footEl = document.getElementById('campurMatrixTot_' + op);
+        if (footEl) footEl.textContent = '0 Rit';
+      });
+      const allEl = document.getElementById('campurMatrixTot_ALL');
+      if (allEl) allEl.textContent = '0 Rit';
+
+      const sumEl = document.getElementById('campurMatrixSummary');
+      if (sumEl) sumEl.innerHTML = '';
+
+      currentCampurMode = 'rinci';
       updateRoda10TotalDisplay();
     }
 
     function loadRetaseExcaForm(item) {
       resetRetaseExcaForm();
-      if (!item.excaBreakdown && !item.retaseItems) return;
+      if (!item.excaBreakdown && !item.retaseItems && !item.excaMaterials) return;
       
-      const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems);
+      const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems) || {};
       const normalizedBreakdown = {};
       Object.entries(breakdown).forEach(([k, v]) => {
         normalizedBreakdown[k.toUpperCase().trim()] = v;
@@ -4000,11 +4384,28 @@ async function saveMasterData() {
         if (radio) radio.checked = true;
         const campurDiv = document.getElementById('campurExcaInputs');
         if (campurDiv) campurDiv.style.display = 'block';
-        keys.forEach(name => {
-          const input = document.getElementById('campurExca_' + name);
-          if (input) input.value = normalizedBreakdown[name];
-        });
-        updateCampurStatus();
+
+        if (item.excaMaterials && Object.keys(item.excaMaterials).length > 0) {
+          setCampurMode('rinci');
+          renderCampurMatrix();
+          Object.entries(item.excaMaterials).forEach(([op, mats]) => {
+            const opUpper = op.toUpperCase().trim();
+            RETASE_MATERIAL_DEFS.forEach(m => {
+              const val = mats[m.key] || 0;
+              const input = document.getElementById('cmat_' + opUpper + '_' + m.key);
+              if (input) input.value = val > 0 ? val : '';
+            });
+          });
+          syncMatrixToForm();
+        } else {
+          // Legacy format or cepat
+          setCampurMode('cepat');
+          keys.forEach(name => {
+            const input = document.getElementById('campurExca_' + name);
+            if (input) input.value = normalizedBreakdown[name];
+          });
+          updateCampurStatus();
+        }
       }
     }
 
@@ -4483,7 +4884,7 @@ async function saveMasterData() {
         let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
         let retaseTotal = item.retaseObj ? (
           (item.retaseObj.sp || 0) + (item.retaseObj.nd || 0) + (item.retaseObj.pasir || 0) + 
-          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0)
+          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0) + (item.retaseObj.lansirSetengah || 0) + (item.retaseObj.lansirSatu || 0)
         ) : 0;
         let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
@@ -4491,12 +4892,32 @@ async function saveMasterData() {
         const rowStyle = noSolar ? 'opacity:0.7; background: var(--bg);' : '';
         const retaseOnlyBadge = noSolar ? '<br><span style="font-size:9px; padding:1px 5px; border-radius:3px; background:#805ad5; color:white;">Retase Only</span>' : '';
 
-        // Build exca info from excaBreakdown (new) or retaseItems (old)
+        // Build exca info from excaBreakdown / excaMaterials (new) or retaseItems (old)
         let retaseItemsHtml = '';
         const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems);
         if (breakdown && Object.keys(breakdown).length > 0) {
-          const parts = Object.entries(breakdown).map(function(entry) { return entry[0] + ':' + entry[1]; }).join(', ');
-          retaseItemsHtml = '<br><span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#2d3748;color:#edf2f7;">📍 ' + parts + '</span>';
+          if (item.excaMaterials && Object.keys(item.excaMaterials).length > 0) {
+            const shortLabels = {
+              sp: 'SP', nd: 'ND', pasir: 'Pasir', sirtu: 'Sirtu', kosongan: 'Kosong',
+              pembuangan: 'Buang', lansirSetengah: 'Lansir 1/2', lansirSatu: 'Lansir 1'
+            };
+            const detailParts = [];
+            Object.entries(item.excaMaterials).forEach(([op, mats]) => {
+              const matParts = Object.entries(mats)
+                .filter(([_, cnt]) => cnt > 0)
+                .map(([mKey, cnt]) => (shortLabels[mKey] || mKey) + ' ' + cnt);
+              if (matParts.length > 0) {
+                detailParts.push(op + ' (' + matParts.join(', ') + ')');
+              } else if (breakdown[op]) {
+                detailParts.push(op + ': ' + breakdown[op]);
+              }
+            });
+            const badgeText = detailParts.join(' | ');
+            retaseItemsHtml = '<br><span style="font-size:9.5px;padding:2px 5px;border-radius:3px;background:rgba(59,130,246,0.15);color:#93c5fd;font-weight:600;">📍 ' + badgeText + '</span>';
+          } else {
+            const parts = Object.entries(breakdown).map(function(entry) { return entry[0] + ':' + entry[1]; }).join(', ');
+            retaseItemsHtml = '<br><span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#2d3748;color:#edf2f7;">📍 ' + parts + '</span>';
+          }
         }
 
         // Pre-compute air cell HTML to avoid nested template literal issues
@@ -4832,14 +5253,24 @@ async function saveMasterData() {
       const topStockGenset = document.getElementById('stockGenset');
       const topStockSelisih = document.getElementById('stockSelisih');
 
+      const topStockSelisihUnit = document.getElementById('stockSelisihUnit');
       if (topStockGenset) topStockGenset.textContent = formatFromLiters(trueStockLiters);
       if (topStockSelisih) {
           if (totalErrorLiters > 0.01) {
             topStockSelisih.textContent = `-${formatFromLiters(totalErrorLiters)}`;
+            topStockSelisih.style.color = '#fc8181'; // Red
+            topStockSelisih.classList.add('pulse');
+            if (topStockSelisihUnit) topStockSelisihUnit.textContent = 'blm keluar ⚠️';
           } else if (totalErrorLiters < -0.01) {
             topStockSelisih.textContent = `+${formatFromLiters(Math.abs(totalErrorLiters))}`;
+            topStockSelisih.style.color = '#fc8181'; // Red
+            topStockSelisih.classList.add('pulse');
+            if (topStockSelisihUnit) topStockSelisihUnit.textContent = 'lebih keluar ⚠️';
           } else {
             topStockSelisih.textContent = '0';
+            topStockSelisih.style.color = '#10b981'; // Green
+            topStockSelisih.classList.remove('pulse');
+            if (topStockSelisihUnit) topStockSelisihUnit.textContent = 'jirgen';
           }
       }
 
@@ -5161,13 +5592,36 @@ async function saveMasterData() {
         { key: 'sirtu', label: 'Sirtu' },
         { key: 'kosongan', label: 'Kosongan' },
         { key: 'pembuangan', label: 'Pembuangan' },
-        { key: 'lansirSetengah', label: 'Lansir 1/2' },
-        { key: 'lansirSatu', label: 'Lansir 1' }
+        { key: 'lansirSetengah', label: 'Lansir 1/2 hari' },
+        { key: 'lansirSatu', label: 'Lansir 1 hari' }
       ];
+
+      const matKeyMap = {};
+      materialKeys.forEach(m => {
+        matKeyMap[m.key.toLowerCase()] = m.label;
+        matKeyMap[m.label.toLowerCase()] = m.label;
+      });
 
       const excaMaterials = {};
 
       (roda10Data || []).forEach(truck => {
+        // 1. If explicit excaMaterials is stored (100% accurate per exca):
+        if (truck.excaMaterials && Object.keys(truck.excaMaterials).length > 0) {
+          Object.entries(truck.excaMaterials).forEach(([op, mats]) => {
+            const opUpper = op.toUpperCase().trim();
+            if (!excaMaterials[opUpper]) excaMaterials[opUpper] = {};
+            Object.entries(mats || {}).forEach(([mKey, count]) => {
+              const num = parseInt(count) || 0;
+              if (num > 0) {
+                const label = matKeyMap[mKey.toLowerCase()] || mKey;
+                excaMaterials[opUpper][label] = (excaMaterials[opUpper][label] || 0) + num;
+              }
+            });
+          });
+          return;
+        }
+
+        // 2. Legacy fallback
         const rawBreakdown = truck.excaBreakdown || {};
         const excaEntries = Object.entries(rawBreakdown).filter(([_, count]) => (parseInt(count) || 0) > 0);
         if (excaEntries.length === 0) return;
@@ -5195,7 +5649,7 @@ async function saveMasterData() {
             }
           }
         } else {
-          // Campur: bagi material ke masing-masing excavator sesuai ritase
+          // Campur legacy: bagi material ke masing-masing excavator sesuai ritase
           let pool = [];
           truckMats.forEach(m => {
             for (let i = 0; i < m.count; i++) pool.push(m.label);
