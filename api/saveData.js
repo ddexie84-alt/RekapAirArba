@@ -52,13 +52,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Simpan data untuk tanggal yang sedang di-edit
+    // 1. Optimistic Locking Check
+    const existing = await kv.get(`solar_data_${date}`);
+    if (existing) {
+      const currentRev = existing._rev || 0;
+      if (data._rev !== undefined && data._rev !== currentRev) {
+        return res.status(409).json({ error: 'Conflict: Data modified by another user' });
+      }
+      data._rev = currentRev + 1;
+    } else {
+      data._rev = 1;
+    }
+
+    // 2. Simpan data untuk tanggal yang sedang di-edit
     await kv.set(`solar_data_${date}`, data);
     
-    // 2. Hitung Stock Akhir dari data yang baru saja disimpan
+    // 3. Hitung Stock Akhir dari data yang baru saja disimpan
     let currentStockAkhirLiters = calcStockAkhirLiters(data);
 
-    // 3. Ambil semua tanggal yang ada di database
+    // 4. Ambil semua tanggal yang ada di database
     // get keys returns an array like ["solar_data_2026-10-05", "solar_data_2026-10-06"]
     const allKeys = await kv.keys('solar_data_*');
     

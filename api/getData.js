@@ -46,9 +46,42 @@ export default async function handler(req, res) {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
-  const { date } = req.query;
-  if (!date) {
-    return res.status(400).json({ error: 'Date is required' });
+  const { date, month } = req.query;
+  if (!date && !month) {
+    return res.status(400).json({ error: 'Date or Month is required' });
+  }
+
+  // 1. Ambil daftar bulan yang tersedia di database
+  if (month === 'list') {
+    try {
+      const allKeys = await kv.keys('solar_data_*');
+      const months = [...new Set(
+        allKeys
+          .map(k => k.replace('solar_data_', ''))
+          .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
+          .map(d => d.substring(0, 7))
+      )].sort((a, b) => b.localeCompare(a));
+      return res.status(200).json(months);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // 2. Ambil seluruh data harian untuk satu bulan tertentu (misal: 2026-10)
+  if (month) {
+    try {
+      const allKeys = await kv.keys('solar_data_' + month + '-*');
+      const results = {};
+      for (const k of allKeys) {
+        const d = await kv.get(k);
+        if (d) {
+          results[k.replace('solar_data_', '')] = d;
+        }
+      }
+      return res.status(200).json(results);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
   }
 
   try {
