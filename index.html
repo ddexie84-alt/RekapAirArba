@@ -1353,19 +1353,82 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
               </div>
             </div>
-
             <!-- ============================== -->
             <!-- RETASE PER EXCA -->
             <!-- ============================== -->
             <hr style="border: 0; border-top: 2px dashed var(--border); margin: 20px 0 15px 0;">
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text);">📍 Rincian Ritase per Excavator <span style="font-size:11px; font-weight:400; color:var(--text-secondary);">(Opsional – isi untuk rekap otomatis per exca)</span></div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Contoh: Bakri ambil di IWAN → SP1, di ANCI → PASIR, di ANCI → SP1</div>
-            <div id="retaseExcaList" style="margin-bottom: 10px;">
-              <!-- rows injected by JS -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);">📍 Retase Masuk ke Excavator Mana?</div>
+              <span id="labelTotalRetaseRoda10" style="font-size:12px; font-weight:700; color:var(--accent); background:var(--surface); padding:2px 8px; border-radius:4px; border:1px solid var(--border);">Total: 0 Rit</span>
             </div>
-            <button type="button" class="btn" style="background: var(--success); color: white; font-size: 12px; padding: 6px 14px; margin-bottom: 12px;" onclick="addRetaseExcaRow()">+ Tambah Ritase</button>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Pilih apakah sopir ini ambil di <strong>ANCI semua</strong>, <strong>IWAN semua</strong>, atau <strong>Campur</strong>:</div>
+            
+            <div style="background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display:flex; flex-direction:column; gap:8px;">
+              <!-- ANCI -->
+              <label class="exca-choice-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;">
+                <input type="radio" name="retaseExcaMode" value="ANCI" style="width:20px;height:20px;accent-color:var(--accent);" onchange="toggleCampurExca()">
+                <div style="flex:1;">
+                  <div style="font-size: 13px; font-weight: 700; color: var(--text);">🚜 Semua ke ANCI</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Semua retase sopir ini masuk hitungan Exca Anci</div>
+                </div>
+              </label>
+
+              <!-- IWAN -->
+              <label class="exca-choice-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;">
+                <input type="radio" name="retaseExcaMode" value="IWAN" style="width:20px;height:20px;accent-color:var(--accent);" onchange="toggleCampurExca()">
+                <div style="flex:1;">
+                  <div style="font-size: 13px; font-weight: 700; color: var(--text);">🚜 Semua ke IWAN</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Semua retase sopir ini masuk hitungan Exca Iwan</div>
+                </div>
+              </label>
+
+              <!-- Extra Excas from Master Data (if any) -->
+              <div id="extraExcaRadios" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+              <!-- CAMPUR (ANCI & IWAN) -->
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                  <input type="radio" name="retaseExcaMode" value="campur" style="width:20px;height:20px;accent-color:var(--accent);" onchange="toggleCampurExca()">
+                  <div style="flex:1;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text);">🔀 Campur (Ada di ANCI & IWAN)</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Bagi jumlah retase per excavator</div>
+                  </div>
+                </label>
+
+                <div id="campurExcaInputs" style="display:none; margin-top:10px; padding:10px; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:11px; color:var(--text-secondary);">Isi pembagian ritase:</span>
+                    <button type="button" class="btn" style="padding:2px 8px; font-size:11px; background:var(--accent); color:white;" onclick="autoSplitCampur()">⚖️ Bagi Rata</button>
+                  </div>
+                  <div id="campurExcaGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <div>
+                      <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 ANCI</label>
+                      <input type="number" class="form-input" id="campurExca_ANCI" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+                    </div>
+                    <div>
+                      <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 IWAN</label>
+                      <input type="number" class="form-input" id="campurExca_IWAN" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">
+                    </div>
+                  </div>
+                  <div id="campurExcaExtraGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;"></div>
+                  <div id="campurStatusNote" style="font-size:11px; margin-top:8px; font-weight:600; color:var(--text-secondary);"></div>
+                </div>
+              </div>
+
+              <!-- TIDAK ADA EXCA -->
+              <label class="exca-choice-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 10px; border-radius: 6px;">
+                <input type="radio" name="retaseExcaMode" value="none" style="width:18px;height:18px;" onchange="toggleCampurExca()">
+                <span style="font-size: 12px; color: var(--text-secondary);">➖ Tidak ada exca (Lansir / Kosongan saja)</span>
+              </label>
+            </div>
           </div>
           <button class="btn btn-primary btn-block retase-input" onclick="addRoda10()">➕ Simpan 10 Roda</button>
+        </div>
+
+        <!-- Rekap Ritase Exca Card di Tab 10 Roda -->
+        <div class="card" id="roda10ExcaSummaryCard" style="display:none; margin-bottom:12px; border: 1px solid var(--accent); background: var(--surface);">
+          <div class="card-title">📍 Rekap Ritase Excavator Tambang <span style="font-size:11px;font-weight:400;color:var(--text-secondary);">(Akumulasi dari 10 Roda hari ini)</span></div>
+          <div id="roda10ExcaSummaryBox"></div>
         </div>
         <div class="card">
           <div class="card-title"><span class="emoji">📋</span> Rincian 10 Roda</div>
@@ -1731,6 +1794,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBBQACAgIAGOfRF0AAAAAAAAAAAAAAAAYAAAAeGwvZHJhd2l
           
           renderMasterSopir();
           renderMasterExca();
+          populateExcaRadios();
           renderMasterRoda10();
           
           if (force) showToast('Data Karyawan berhasil dimuat ulang!', 'success');
@@ -1808,6 +1872,7 @@ async function saveMasterData() {
       document.getElementById('masterOprExca').value = '';
       document.getElementById('masterAlatExca').value = '';
       renderMasterExca();
+      populateExcaRadios();
       saveMasterData();
     }
     
@@ -1815,6 +1880,7 @@ async function saveMasterData() {
       if(confirm('Hapus operator exca ini?')) {
         masterExca.splice(idx, 1);
         renderMasterExca();
+        populateExcaRadios();
         saveMasterData();
       }
     }
@@ -1988,6 +2054,17 @@ async function saveMasterData() {
         document.getElementById('exaAlat').value = '';
         autofillHmPrev(e.target.value.trim(), 'exaHmPrev');
       }
+
+      // Auto-fill retase from 10 Roda summary if empty or 0
+      try {
+        const summary = getExcaRetaseSummary();
+        const searchOp = (found ? found.operator : e.target.value).toUpperCase().trim();
+        const matchedKey = Object.keys(summary).find(k => k.toUpperCase().trim() === searchOp);
+        const retaseInput = document.getElementById('exaRetase');
+        if (matchedKey && summary[matchedKey] && retaseInput && (!retaseInput.value || retaseInput.value === '0')) {
+          retaseInput.value = summary[matchedKey].total;
+        }
+      } catch(err) { console.error('Auto-fill exca retase error:', err); }
     }
 
     async function init() {
@@ -2156,7 +2233,7 @@ async function saveMasterData() {
         });
       }
 
-      // Fast Enter-to-Next logic for Retase form
+      // Fast Enter-to-Next logic for Retase form + Live total updater
       const retaseInputs = document.querySelectorAll('.retase-input');
       retaseInputs.forEach((input, index) => {
         input.addEventListener('keydown', function(e) {
@@ -2169,6 +2246,7 @@ async function saveMasterData() {
             }
           }
         });
+        input.addEventListener('input', updateRoda10TotalDisplay);
       });
     });
 
@@ -2234,10 +2312,14 @@ async function saveMasterData() {
         data = { stockPrev: { jirgen: 0, liter: 0 }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
       }
       
-      const prevJir = data.stockPrev.jirgen || 0;
-      const prevLit = data.stockPrev.liter || 0;
+      // Defensive: clamp to positive values
+      const prevJir = Math.abs(data.stockPrev.jirgen || 0);
+      const prevLit = Math.abs(data.stockPrev.liter || 0);
+      // Fix data if it was stored with negative values
+      data.stockPrev.jirgen = prevJir;
+      data.stockPrev.liter = prevLit;
       const displayLit = prevLit ? prevLit.toString().replace('.', ',') : '';
-      document.getElementById('stockPrevInput').value = displayLit ? `${prevJir}.${displayLit}` : prevJir.toString();
+      document.getElementById('stockPrevInput').value = displayLit ? `${prevJir}.${displayLit}` : (prevJir > 0 ? prevJir.toString() : '');
       hideLoading();
     }
 
@@ -2670,7 +2752,17 @@ async function saveMasterData() {
         renderMasterExca();
       }
 
-      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase, retaseFull, sumber, jirgen, liter, isFull, prevFullDate });
+      let finalExaRetase = retase;
+      if (finalExaRetase === '' || finalExaRetase === 0) {
+        try {
+          const s = getExcaRetaseSummary();
+          const op = operator.toUpperCase().trim();
+          const matchKey = Object.keys(s).find(k => k.toUpperCase().trim() === op);
+          if (matchKey && s[matchKey]) finalExaRetase = s[matchKey].total;
+        } catch(e) {}
+      }
+
+      data.exa.push({ alat, operator, hmIsi, hmPrev, selisihHm, waktu, retase: finalExaRetase, retaseFull, sumber, jirgen, liter, isFull, prevFullDate });
       saveData();
       renderExa();
       updateSummary();
@@ -2770,6 +2862,8 @@ async function saveMasterData() {
       }
 
       const retaseItems = getRetaseExcaRows();
+      const totalRetase = parseInt(retaseBiasa) || sumRetase || 0;
+      const excaData = getRetaseExcaData(totalRetase);
 
       data.roda10.push({ 
         sopir, 
@@ -2785,12 +2879,15 @@ async function saveMasterData() {
         jirgenTruk, literTruk,
         jirgen, 
         liter,
-        retaseItems
+        retaseItems,
+        excaBreakdown: excaData.excaBreakdown,
+        excaMode: excaData.mode
       });
       saveData();
       renderRoda10();
       updateSummary();
       renderExcaRetaseSummary();
+      renderExa();
 
       // Reset
       document.getElementById('roda10Sopir').value = '';
@@ -2825,126 +2922,279 @@ async function saveMasterData() {
     }
 
     // ============================================
-    // RETASE PER EXCA — Helper Functions
+    // RETASE PER EXCA — ANCI, IWAN & CAMPUR
     // ============================================
-    const RETASE_MATERIALS = ['SP1', 'ND', 'Pasir', 'Sirtu', 'Kosongan', 'Pembuangan', 'Lansir 1/2', 'Lansir 1 Hari'];
 
-    function addRetaseExcaRow(jenis, excaName) {
-      const list = document.getElementById('retaseExcaList');
-      if (!list) return;
-      const idx = list.children.length;
+    // Populate extra radio options from masterExca (beyond ANCI and IWAN)
+    function populateExcaRadios() {
+      const extraRadios = document.getElementById('extraExcaRadios');
+      const extraGrid = document.getElementById('campurExcaExtraGrid');
+      if (!extraRadios) return;
+      
+      extraRadios.innerHTML = '';
+      if (extraGrid) extraGrid.innerHTML = '';
 
-      // Build exca options from masterExca
-      const excaOptions = masterExca.map(e => {
-        const name = e.alat || e.operator || '';
-        const sel = (excaName && name === excaName) ? ' selected' : '';
-        return `<option value="${name}"${sel}>${name}</option>`;
-      }).join('');
+      const known = ['ANCI', 'IWAN'];
+      masterExca.forEach(e => {
+        const op = (e.operator || '').toUpperCase().trim();
+        if (op && !known.includes(op)) {
+          known.push(op);
+          
+          const label = document.createElement('label');
+          label.className = 'exca-choice-item';
+          label.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;';
+          label.innerHTML = '<input type="radio" name="retaseExcaMode" value="' + op + '" style="width:20px;height:20px;accent-color:var(--accent);" onchange="toggleCampurExca()">' +
+            '<div style="flex:1;">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--text);">🚜 Semua ke ' + op + '</div>' +
+              '<div style="font-size:11px;color:var(--text-secondary);">Semua retase sopir ini masuk hitungan Exca ' + op + '</div>' +
+            '</div>';
+          extraRadios.appendChild(label);
 
-      const matOptions = RETASE_MATERIALS.map(m => {
-        const sel = (jenis && m === jenis) ? ' selected' : '';
-        return `<option value="${m}"${sel}>${m}</option>`;
-      }).join('');
-
-      const row = document.createElement('div');
-      row.className = 'retase-exca-row';
-      row.style.cssText = 'display:grid; grid-template-columns: 28px 1fr 1fr 28px; gap:6px; align-items:center; margin-bottom:6px;';
-      row.innerHTML = `
-        <span style="font-size:12px; color:var(--text-secondary); text-align:center;">${idx + 1}</span>
-        <select class="form-input" style="font-size:12px; padding:5px 6px;">
-          <option value="">-- Jenis --</option>${matOptions}
-        </select>
-        <select class="form-input" style="font-size:12px; padding:5px 6px;">
-          <option value="">-- Exca (opsional) --</option>${excaOptions}
-        </select>
-        <button type="button" onclick="removeRetaseExcaRow(this)" style="background:var(--danger);color:white;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">✕</button>
-      `;
-      list.appendChild(row);
-      renumberRetaseRows();
-    }
-
-    function removeRetaseExcaRow(btn) {
-      btn.closest('.retase-exca-row').remove();
-      renumberRetaseRows();
-    }
-
-    function renumberRetaseRows() {
-      const list = document.getElementById('retaseExcaList');
-      if (!list) return;
-      Array.from(list.children).forEach((row, i) => {
-        const num = row.querySelector('span');
-        if (num) num.textContent = i + 1;
+          if (extraGrid) {
+            const div = document.createElement('div');
+            div.innerHTML = '<label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;">🚜 ' + op + '</label>' +
+              '<input type="number" class="form-input" id="campurExca_' + op + '" min="0" placeholder="0 Rit" style="font-size:13px;padding:6px;" oninput="updateCampurStatus()">';
+            extraGrid.appendChild(div);
+          }
+        }
       });
+      updateRoda10TotalDisplay();
+    }
+
+    function toggleCampurExca() {
+      const selected = document.querySelector('input[name="retaseExcaMode"]:checked');
+      const campurDiv = document.getElementById('campurExcaInputs');
+      if (selected && selected.value === 'campur') {
+        if (campurDiv) campurDiv.style.display = 'block';
+        updateCampurStatus();
+      } else {
+        if (campurDiv) campurDiv.style.display = 'none';
+      }
+    }
+
+    function autoSplitCampur() {
+      const total = getTotalRetaseFromForm();
+      const half1 = Math.ceil(total / 2);
+      const half2 = Math.floor(total / 2);
+      const elAnci = document.getElementById('campurExca_ANCI');
+      const elIwan = document.getElementById('campurExca_IWAN');
+      if (elAnci) elAnci.value = half1;
+      if (elIwan) elIwan.value = half2;
+      updateCampurStatus();
+    }
+
+    function updateCampurStatus() {
+      const total = getTotalRetaseFromForm();
+      let sum = 0;
+      const elAnci = document.getElementById('campurExca_ANCI');
+      const elIwan = document.getElementById('campurExca_IWAN');
+      sum += parseInt(elAnci?.value) || 0;
+      sum += parseInt(elIwan?.value) || 0;
+      
+      masterExca.forEach(e => {
+        const op = (e.operator || '').toUpperCase().trim();
+        if (op && op !== 'ANCI' && op !== 'IWAN') {
+          const input = document.getElementById('campurExca_' + op);
+          sum += parseInt(input?.value) || 0;
+        }
+      });
+
+      const note = document.getElementById('campurStatusNote');
+      if (note) {
+        if (total === 0) {
+          note.innerHTML = '<span style="color:var(--text-secondary);">Isi jumlah retase sopir terlebih dahulu di form atas.</span>';
+        } else if (sum === total) {
+          note.innerHTML = '<span style="color:var(--success);font-weight:700;">✅ Terbagi pas: ' + sum + ' dari ' + total + ' Rit</span>';
+        } else if (sum < total) {
+          note.innerHTML = '<span style="color:var(--warning);font-weight:700;">⚠️ Terbagi: ' + sum + ' / Total: ' + total + ' Rit (Kurang ' + (total - sum) + ' Rit)</span>';
+        } else {
+          note.innerHTML = '<span style="color:var(--danger);font-weight:700;">❌ Terbagi: ' + sum + ' / Total: ' + total + ' Rit (Lebih ' + (sum - total) + ' Rit)</span>';
+        }
+      }
+    }
+
+    function updateRoda10TotalDisplay() {
+      const total = getTotalRetaseFromForm();
+      const lbl = document.getElementById('labelTotalRetaseRoda10');
+      if (lbl) lbl.textContent = 'Total: ' + total + ' Rit';
+      updateCampurStatus();
+    }
+
+    function getRetaseExcaData(totalRetase) {
+      const selected = document.querySelector('input[name="retaseExcaMode"]:checked');
+      if (!selected || selected.value === 'none') return { mode: 'none', excaBreakdown: {} };
+      
+      if (selected.value === 'campur') {
+        const breakdown = {};
+        const elAnci = document.getElementById('campurExca_ANCI');
+        const elIwan = document.getElementById('campurExca_IWAN');
+        const vAnci = parseInt(elAnci?.value) || 0;
+        const vIwan = parseInt(elIwan?.value) || 0;
+        if (vAnci > 0) breakdown['ANCI'] = vAnci;
+        if (vIwan > 0) breakdown['IWAN'] = vIwan;
+
+        masterExca.forEach(e => {
+          const op = (e.operator || '').toUpperCase().trim();
+          if (op && op !== 'ANCI' && op !== 'IWAN') {
+            const input = document.getElementById('campurExca_' + op);
+            const val = parseInt(input?.value) || 0;
+            if (val > 0) breakdown[op] = val;
+          }
+        });
+        return { mode: 'campur', excaBreakdown: breakdown };
+      }
+      
+      const excaName = selected.value.toUpperCase().trim();
+      const breakdown = {};
+      breakdown[excaName] = totalRetase || 0;
+      return { mode: excaName, excaName, excaBreakdown: breakdown };
+    }
+
+    function retaseItemsToBreakdown(retaseItems) {
+      if (!retaseItems || retaseItems.length === 0) return {};
+      const breakdown = {};
+      retaseItems.forEach(item => {
+        if (item.exca) {
+          const k = item.exca.toUpperCase().trim();
+          breakdown[k] = (breakdown[k] || 0) + 1;
+        }
+      });
+      return breakdown;
+    }
+
+    function resetRetaseExcaForm() {
+      document.querySelectorAll('input[name="retaseExcaMode"]').forEach(r => r.checked = false);
+      const campurDiv = document.getElementById('campurExcaInputs');
+      if (campurDiv) campurDiv.style.display = 'none';
+      const elAnci = document.getElementById('campurExca_ANCI');
+      const elIwan = document.getElementById('campurExca_IWAN');
+      if (elAnci) elAnci.value = '';
+      if (elIwan) elIwan.value = '';
+      const note = document.getElementById('campurStatusNote');
+      if (note) note.innerHTML = '';
+      masterExca.forEach(e => {
+        const op = (e.operator || '').toUpperCase().trim();
+        if (op) {
+          const input = document.getElementById('campurExca_' + op);
+          if (input) input.value = '';
+        }
+      });
+      updateRoda10TotalDisplay();
+    }
+
+    function loadRetaseExcaForm(item) {
+      resetRetaseExcaForm();
+      if (!item.excaBreakdown && !item.retaseItems) return;
+      
+      const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems);
+      const normalizedBreakdown = {};
+      Object.entries(breakdown).forEach(([k, v]) => {
+        normalizedBreakdown[k.toUpperCase().trim()] = v;
+      });
+      const keys = Object.keys(normalizedBreakdown);
+
+      if (keys.length === 0) {
+        const noneRadio = document.querySelector('input[name="retaseExcaMode"][value="none"]');
+        if (noneRadio) noneRadio.checked = true;
+      } else if (keys.length === 1 && item.excaMode !== 'campur') {
+        const opName = keys[0];
+        let radio = document.querySelector('input[name="retaseExcaMode"][value="' + opName + '"]');
+        if (!radio) {
+          populateExcaRadios();
+          radio = document.querySelector('input[name="retaseExcaMode"][value="' + opName + '"]');
+        }
+        if (radio) radio.checked = true;
+      } else {
+        const radio = document.querySelector('input[name="retaseExcaMode"][value="campur"]');
+        if (radio) radio.checked = true;
+        const campurDiv = document.getElementById('campurExcaInputs');
+        if (campurDiv) campurDiv.style.display = 'block';
+        keys.forEach(name => {
+          const input = document.getElementById('campurExca_' + name);
+          if (input) input.value = normalizedBreakdown[name];
+        });
+        updateCampurStatus();
+      }
     }
 
     function getRetaseExcaRows() {
-      const list = document.getElementById('retaseExcaList');
-      if (!list) return [];
+      const totalRetase = getTotalRetaseFromForm();
+      const excaData = getRetaseExcaData(totalRetase);
       const items = [];
-      Array.from(list.children).forEach(row => {
-        const selects = row.querySelectorAll('select');
-        const jenis = selects[0]?.value || '';
-        const exca = selects[1]?.value || '';
-        if (jenis) items.push({ jenis, exca });
+      Object.entries(excaData.excaBreakdown).forEach(([exca, count]) => {
+        for (let i = 0; i < count; i++) {
+          items.push({ jenis: '', exca });
+        }
       });
       return items;
     }
-
-    function clearRetaseExcaRows() {
-      const list = document.getElementById('retaseExcaList');
-      if (list) list.innerHTML = '';
-    }
-
+    function clearRetaseExcaRows() { resetRetaseExcaForm(); }
     function loadRetaseExcaRows(items) {
-      clearRetaseExcaRows();
-      (items || []).forEach(item => addRetaseExcaRow(item.jenis, item.exca));
+      if (items && items.length > 0) {
+        loadRetaseExcaForm({ retaseItems: items });
+      }
     }
 
-    // Hitung total ritase per excavator dari seluruh data roda10 hari ini
+    function getTotalRetaseFromForm() {
+      const sp = parseInt(document.getElementById('r10_sp')?.value) || 0;
+      const nd = parseInt(document.getElementById('r10_nd')?.value) || 0;
+      const pasir = parseInt(document.getElementById('r10_pasir')?.value) || 0;
+      const sirtu = parseInt(document.getElementById('r10_sirtu')?.value) || 0;
+      const kosongan = parseInt(document.getElementById('r10_kosongan')?.value) || 0;
+      const pembuangan = parseInt(document.getElementById('r10_pembuangan')?.value) || 0;
+      const lansirSetengah = parseInt(document.getElementById('r10_lansirSetengah')?.value) || 0;
+      const lansirSatu = parseInt(document.getElementById('r10_lansirSatu')?.value) || 0;
+      const retaseBiasa = parseInt(document.getElementById('roda10Retase')?.value) || 0;
+      return sp + nd + pasir + sirtu + kosongan + pembuangan + lansirSetengah + lansirSatu + retaseBiasa;
+    }
+
     function getExcaRetaseSummary() {
-      const summary = {}; // { "ANCI": [{sopir, jenis}, ...], "IWAN": [...] }
+      const summary = {}; // { "ANCI": { total: 5, sopirs: { "BAKRI": 3, ... } }, "IWAN": { ... } }
       (data.roda10 || []).forEach(truck => {
-        (truck.retaseItems || []).forEach(item => {
-          if (item.exca) {
-            if (!summary[item.exca]) summary[item.exca] = [];
-            summary[item.exca].push({ sopir: truck.sopir, jenis: item.jenis });
-          }
+        const rawBreakdown = truck.excaBreakdown || retaseItemsToBreakdown(truck.retaseItems);
+        Object.entries(rawBreakdown).forEach(([exca, count]) => {
+          const excaUpper = (exca || '').toUpperCase().trim();
+          if (!excaUpper) return;
+          const numCount = parseInt(count) || 0;
+          if (numCount <= 0) return;
+          if (!summary[excaUpper]) summary[excaUpper] = { total: 0, sopirs: {} };
+          summary[excaUpper].total += numCount;
+          summary[excaUpper].sopirs[truck.sopir] = (summary[excaUpper].sopirs[truck.sopir] || 0) + numCount;
         });
       });
       return summary;
     }
 
     function renderExcaRetaseSummary() {
-      const el = document.getElementById('excaRetaseSummaryBox');
-      const card = document.getElementById('excaRetaseSummaryCard');
-      if (!el) return;
       const summary = getExcaRetaseSummary();
       const keys = Object.keys(summary);
+
+      const el = document.getElementById('excaRetaseSummaryBox');
+      const card = document.getElementById('excaRetaseSummaryCard');
+      const r10El = document.getElementById('roda10ExcaSummaryBox');
+      const r10Card = document.getElementById('roda10ExcaSummaryCard');
+
       if (keys.length === 0) {
         if (card) card.style.display = 'none';
+        if (r10Card) r10Card.style.display = 'none';
         return;
       }
-      if (card) card.style.display = 'block';
+
       let html = '';
       keys.forEach(excaName => {
-        const items = summary[excaName];
-        const total = items.length;
-        const bySopir = {};
-        items.forEach(x => { bySopir[x.sopir] = (bySopir[x.sopir] || 0) + 1; });
-        const sopirStr = Object.entries(bySopir).map(([s, n]) => `${s}×${n}`).join(', ');
-        const byMat = {};
-        items.forEach(x => { byMat[x.jenis] = (byMat[x.jenis] || 0) + 1; });
-        const matStr = Object.entries(byMat).map(([m, n]) => `${m}:${n}`).join(', ');
-        html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-          <div style="flex:1;">
-            <strong style="font-size:13px;">${excaName}</strong>
-            <span style="font-size:10px;color:var(--text-secondary);margin-left:6px;">${matStr}</span><br>
-            <span style="font-size:11px;color:var(--text-secondary);">Oleh: ${sopirStr}</span>
-          </div>
-          <div style="font-size:18px;font-weight:700;color:var(--accent);white-space:nowrap;">${total} Rit</div>
-        </div>`;
+        const info = summary[excaName];
+        const sopirStr = Object.entries(info.sopirs).map(([s, n]) => s + '×' + n).join(', ');
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<div style="flex:1;">' +
+            '<strong style="font-size:14px;color:var(--text);">🚜 ' + excaName + '</strong><br>' +
+            '<span style="font-size:11px;color:var(--text-secondary);">Sopir 10 Roda: ' + sopirStr + '</span>' +
+          '</div>' +
+          '<div style="font-size:18px;font-weight:700;color:var(--accent);white-space:nowrap;">' + info.total + ' Rit</div>' +
+        '</div>';
       });
-      el.innerHTML = html;
+
+      if (card) { card.style.display = 'block'; if (el) el.innerHTML = html; }
+      if (r10Card) { r10Card.style.display = 'block'; if (r10El) r10El.innerHTML = html; }
     }
 
 
@@ -3106,8 +3356,8 @@ async function saveMasterData() {
           trukInput.value = '';
         }
       }
-      // Load retaseItems (per exca) ke dynamic list
-      loadRetaseExcaRows(item.retaseItems || []);
+      // Load retase exca assignment ke radio form
+      loadRetaseExcaForm(item);
 
       // Delete the old entry
       data.roda10.splice(idx, 1);
@@ -3257,7 +3507,19 @@ async function saveMasterData() {
           <td>${item.hmPrev || '-'}</td>
           <td>${item.selisihHm ? item.selisihHm.toFixed(1) + ' Jam' : '-'}</td>
           <td>${item.waktu || '-'}</td>
-          <td>${item.retase || '-'}</td>
+          <td>${(() => {
+            const summary = getExcaRetaseSummary();
+            const opUpper = (item.operator || '').toUpperCase().trim();
+            const auto10R = summary[opUpper] ? summary[opUpper].total : 0;
+            if (item.retase && auto10R && item.retase !== auto10R) {
+              return '<strong>' + item.retase + '</strong> <span style="font-size:10px; color:var(--accent);">(10R: ' + auto10R + ')</span>';
+            } else if (item.retase) {
+              return '<strong>' + item.retase + '</strong>';
+            } else if (auto10R) {
+              return '<strong style="color:var(--accent);">' + auto10R + '</strong> <span style="font-size:9px; color:var(--text-secondary);">(10R)</span>';
+            }
+            return '-';
+          })()}</td>
           <td>${item.retaseFull || '-'}</td>
           <td>
             <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
@@ -3310,16 +3572,12 @@ async function saveMasterData() {
         const rowStyle = noSolar ? 'opacity:0.7; background: var(--bg);' : '';
         const retaseOnlyBadge = noSolar ? '<br><span style="font-size:9px; padding:1px 5px; border-radius:3px; background:#805ad5; color:white;">Retase Only</span>' : '';
 
-        // Build retaseItems info
+        // Build exca info from excaBreakdown (new) or retaseItems (old)
         let retaseItemsHtml = '';
-        if (item.retaseItems && item.retaseItems.length > 0) {
-          const excaSummary = {};
-          item.retaseItems.forEach(ri => {
-            const key = ri.exca || 'Lainnya';
-            excaSummary[key] = (excaSummary[key] || 0) + 1;
-          });
-          const parts = Object.entries(excaSummary).map(([e, n]) => `${e}:${n}`).join(', ');
-          retaseItemsHtml = `<br><span style="font-size:9px;color:var(--text-secondary);">${parts}</span>`;
+        const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems);
+        if (breakdown && Object.keys(breakdown).length > 0) {
+          const parts = Object.entries(breakdown).map(function(entry) { return entry[0] + ':' + entry[1]; }).join(', ');
+          retaseItemsHtml = '<br><span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#2d3748;color:#edf2f7;">📍 ' + parts + '</span>';
         }
 
         // Pre-compute air cell HTML to avoid nested template literal issues
@@ -3410,6 +3668,8 @@ async function saveMasterData() {
       renderRoda10();
       renderPabrik();
       updateSummary();
+      populateExcaRadios();
+      renderExcaRetaseSummary();
     }
 
     function renderAnalisaBBM() {
@@ -3948,6 +4208,7 @@ async function saveMasterData() {
         wsKeluar.getCell('K14').value = formatFromLiters(totalPabrikLiters);
 
         let totalExaLiters = 0;
+        const excaSummary = getExcaRetaseSummary();
         data.exa.forEach((item, i) => {
           if (i < 5) {
             const row = 19 + i;
@@ -3960,11 +4221,30 @@ async function saveMasterData() {
             wsKeluar.getCell('E' + row).value = item.hmPrev;
             wsKeluar.getCell('F' + row).value = item.selisihHm ? item.selisihHm.toFixed(1) : '';
             wsKeluar.getCell('G' + row).value = item.waktu;
-            wsKeluar.getCell('H' + row).value = item.retase;
+            
+            // Retase: item.retase OR from 10 Roda summary
+            const opUpper = (item.operator || '').toUpperCase().trim();
+            const from10R = excaSummary[opUpper] ? excaSummary[opUpper].total : '';
+            wsKeluar.getCell('H' + row).value = (item.retase !== '' && item.retase !== undefined && item.retase !== 0) ? item.retase : from10R;
             wsKeluar.getCell('I' + row).value = item.retaseFull;
             const airText = formatJirgenLiter(item.jirgen, item.liter);
             wsKeluar.getCell('J' + row).value = (item.isFull || (item.jirgenFull > 0 || item.literFull > 0)) ? `${airText} ( FULL )` : airText;
             wsKeluar.getCell('K' + row).value = '';
+          }
+        });
+
+        // Juga masukkan exca yang tidak isi solar tapi punya retase dari 10 Roda
+        let nextExcaIdx = data.exa.length;
+        Object.keys(excaSummary).forEach(opName => {
+          const alreadyWritten = data.exa.some(x => (x.operator || '').toUpperCase().trim() === opName.toUpperCase().trim());
+          if (!alreadyWritten && nextExcaIdx < 5) {
+            const row = 19 + nextExcaIdx;
+            const mExca = masterExca.find(m => (m.operator || '').toUpperCase().trim() === opName.toUpperCase().trim());
+            wsKeluar.getCell('A' + row).value = nextExcaIdx + 1;
+            wsKeluar.getCell('B' + row).value = mExca ? mExca.alat : 'EXCAVATOR';
+            wsKeluar.getCell('C' + row).value = opName;
+            wsKeluar.getCell('H' + row).value = excaSummary[opName].total;
+            nextExcaIdx++;
           }
         });
         wsKeluar.getCell('J24').value = formatFromLiters(totalExaLiters);
