@@ -5432,17 +5432,55 @@ async function saveMasterData() {
     // ============================================
     // STOK REAL GENSET VS PERHITUNGAN BOS & HASIL MINUS
     // ============================================
+    // Menghitung stok khusus fisik Genset (hanya menghitung solar masuk lokasi Genset & pengeluaran dari Genset)
+    function getGensetSolarStats() {
+      const stockPrevLiters = toTotalLiters(data.stockPrev?.jirgen, data.stockPrev?.liter);
+      
+      let masukGenset = 0;
+      (data.masuk || []).forEach(item => {
+        // Hanya solar masuk yang lokasinya ke Genset (atau legacy tanpa lokasi):
+        if (!item.lokasi || (item.lokasi || '').toLowerCase() === 'genset') {
+          masukGenset += toTotalLiters(item.jirgen, item.liter);
+        }
+      });
+
+      let keluarGenset = 0;
+      (data.loader || []).forEach(item => {
+        if (item.sumber === 'Genset' || !item.sumber) {
+          keluarGenset += toTotalLiters(item.jirgen, item.liter);
+        }
+      });
+      (data.exa || []).forEach(item => {
+        if (item.sumber === 'Genset' || !item.sumber) {
+          keluarGenset += toTotalLiters(item.jirgen, item.liter);
+        }
+      });
+      (data.roda10 || []).forEach(item => {
+        if (item.sumber === 'Keduanya') {
+          keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+        } else if (item.sumber === 'Genset' || !item.sumber) {
+          keluarGenset += toTotalLiters(item.jirgen, item.liter);
+        }
+      });
+      (data.pabrik || []).forEach(item => {
+        if (item.sumber === 'Genset' || !item.sumber) {
+          keluarGenset += toTotalLiters(item.jirgen, item.liter);
+        }
+      });
+
+      const gensetWebLiters = stockPrevLiters + masukGenset - keluarGenset;
+      return {
+        stockPrevLiters,
+        masukGenset,
+        keluarGenset,
+        gensetWebLiters
+      };
+    }
+
     function handleStokRealInput(val) {
       data.stokRealGenset = (val || '').trim();
-
-      const stockPrevLiters = toTotalLiters(data.stockPrev?.jirgen, data.stockPrev?.liter);
-      let totalMasuk = 0; (data.masuk || []).forEach(item => { totalMasuk += toTotalLiters(item.jirgen, item.liter); });
-      let totalKeluar = 0;
-      (data.loader || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.exa || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.roda10 || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.pabrik || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      const webLiters = stockPrevLiters + totalMasuk - totalKeluar;
+      const { gensetWebLiters } = getGensetSolarStats();
+      const webLiters = gensetWebLiters;
 
       if (!val.trim()) {
         data.minusRealGenset = '';
@@ -5469,15 +5507,8 @@ async function saveMasterData() {
 
     function handleMinusRealInput(val) {
       data.minusRealGenset = (val || '').trim();
-
-      const stockPrevLiters = toTotalLiters(data.stockPrev?.jirgen, data.stockPrev?.liter);
-      let totalMasuk = 0; (data.masuk || []).forEach(item => { totalMasuk += toTotalLiters(item.jirgen, item.liter); });
-      let totalKeluar = 0;
-      (data.loader || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.exa || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.roda10 || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.pabrik || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      const webLiters = stockPrevLiters + totalMasuk - totalKeluar;
+      const { gensetWebLiters } = getGensetSolarStats();
+      const webLiters = gensetWebLiters;
 
       if (!val.trim()) {
         data.stokRealGenset = '';
@@ -5497,14 +5528,8 @@ async function saveMasterData() {
     }
 
     function updateComparisonGenset() {
-      const stockPrevLiters = toTotalLiters(data.stockPrev?.jirgen, data.stockPrev?.liter);
-      let totalMasuk = 0; (data.masuk || []).forEach(item => { totalMasuk += toTotalLiters(item.jirgen, item.liter); });
-      let totalKeluar = 0;
-      (data.loader || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.exa || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.roda10 || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      (data.pabrik || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
-      const webLiters = stockPrevLiters + totalMasuk - totalKeluar;
+      const { stockPrevLiters, masukGenset, keluarGenset, gensetWebLiters } = getGensetSolarStats();
+      const webLiters = gensetWebLiters;
 
       // Update Box Stok Bos
       const elBoxBos = document.getElementById('boxStokBosVal');
