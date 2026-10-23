@@ -1167,18 +1167,21 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
               <label class="form-label">Waktu Isi</label>
               <input type="time" class="form-input" id="loaderWaktu">
             </div>
-            <div class="form-group">
-              <label class="form-label">Sumber Solar</label>
-              <select class="form-input" id="loaderSumber">
-                <option value="Genset">Dari Genset</option>
-                <option value="Truk">Langsung dari Truk / Tambang</option>
-              </select>
+            <!-- Air dari Genset -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">🟢 Air dari Genset</label>
+              <input type="text" inputmode="text" class="form-input" id="loaderInputGenset" placeholder="Contoh: 1 atau 1.15 (opsional)">
+              <span class="jirgen-hint" style="font-size:10px;">Kosongkan jika tidak ada dari Genset</span>
             </div>
-            <div class="form-group">
-              <label class="form-label">Jumlah Air</label>
-              <input type="text" inputmode="text" class="form-input" id="loaderInput" min="0" placeholder="Contoh: 2 atau 2.15">
-               <span class="jirgen-hint">Ket: 2 = 2 jirgen. 2.15 = 2 jirgen 15 liter (Max 35L/jirgen)</span>
+            <!-- Air dari Truk / Mobil -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">🟠 Air dari Truk / Mobil</label>
+              <input type="text" inputmode="text" class="form-input" id="loaderInputTruk" placeholder="Contoh: 1 atau 0.15 (opsional)">
+              <span class="jirgen-hint" style="font-size:10px;">Kosongkan jika tidak ada dari Truk/Mobil</span>
             </div>
+            <!-- Hidden legacy input for compatibility -->
+            <input type="hidden" id="loaderInput" value="">
+            <input type="hidden" id="loaderSumber" value="Genset">
           </div>
           <button class="btn btn-primary btn-block" onclick="addLoader()">➕ Tambah</button>
         </div>
@@ -3692,9 +3695,39 @@ async function saveMasterData() {
       const hmIsi = document.getElementById('loaderHmIsi').value;
       const hmPrev = document.getElementById('loaderHmPrev').value;
       const waktu = document.getElementById('loaderWaktu').value;
-      const {jirgen, liter} = parseInput('loaderInput');
 
-      const sumber = document.getElementById('loaderSumber').value;
+      // Parse air dari Genset dan Truk/Mobil secara terpisah
+      const gensetInputEl = document.getElementById('loaderInputGenset');
+      const trukInputEl = document.getElementById('loaderInputTruk');
+      const gensetVal = gensetInputEl ? gensetInputEl.value.trim() : '';
+      const trukVal = trukInputEl ? trukInputEl.value.trim() : '';
+
+      let jirgenGenset = 0, literGenset = 0;
+      let jirgenTruk = 0, literTruk = 0;
+      if (gensetVal) { const pg = parseJumlahStr(gensetVal); jirgenGenset = pg.jirgen; literGenset = pg.liter; }
+      if (trukVal) { const pt = parseJumlahStr(trukVal); jirgenTruk = pt.jirgen; literTruk = pt.liter; }
+
+      // Fallback untuk input tunggal lama (jika ada)
+      const legacyEl = document.getElementById('loaderInput');
+      if (!gensetVal && !trukVal && legacyEl && legacyEl.value.trim()) {
+        const pl = parseJumlahStr(legacyEl.value.trim());
+        const legacySumber = document.getElementById('loaderSumber')?.value || 'Genset';
+        if (legacySumber === 'Truk') {
+          jirgenTruk = pl.jirgen; literTruk = pl.liter;
+        } else {
+          jirgenGenset = pl.jirgen; literGenset = pl.liter;
+        }
+      }
+
+      // Total gabungan
+      const totalLit = toTotalLiters(jirgenGenset, literGenset) + toTotalLiters(jirgenTruk, literTruk);
+      const { jirgen, liter } = fromTotalLiters(totalLit);
+
+      // Tentukan sumber: Keduanya, Genset, atau Truk
+      let sumber = 'Genset';
+      if (jirgenTruk > 0 || literTruk > 0) {
+        sumber = (jirgenGenset > 0 || literGenset > 0) ? 'Keduanya' : 'Truk';
+      }
 
       if (!operator) { showToast('Pilih nama operator loader!', 'error'); return; }
       const getBase = name => (name || '').replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
@@ -3705,13 +3738,26 @@ async function saveMasterData() {
         alert('GAGAL INPUT:\nOperator Loader "' + baseOp + '" tidak sesuai dengan data di Karyawan/Unit!\n\nHarap daftarkan di tab Karyawan terlebih dahulu.');
         return;
       }
-      if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air!', 'error'); return; }
+      if (jirgen === 0 && liter === 0) { showToast('Isi jumlah air (Genset atau Truk/Mobil)!', 'error'); return; }
 
       const hmIsiFloat = parseFloat(hmIsi) || 0;
       const hmPrevFloat = parseFloat(hmPrev) || 0;
       const selisihHm = (hmIsi && hmPrev) ? (hmIsiFloat - hmPrevFloat) : 0;
 
-      data.loader.push({ operator, hmIsi, hmPrev, selisihHm, waktu, sumber, jirgen, liter });
+      data.loader.push({
+        operator,
+        hmIsi,
+        hmPrev,
+        selisihHm,
+        waktu,
+        sumber,
+        jirgenGenset,
+        literGenset,
+        jirgenTruk,
+        literTruk,
+        jirgen,
+        liter
+      });
       saveData();
       renderLoader();
       updateSummary();
@@ -3721,7 +3767,9 @@ async function saveMasterData() {
       if (document.getElementById('loaderOprCadangan')) document.getElementById('loaderOprCadangan').checked = false;
       document.getElementById('loaderHmIsi').value = '';
       document.getElementById('loaderHmPrev').value = '';
-      document.getElementById('loaderInput').value = '';
+      if (gensetInputEl) gensetInputEl.value = '';
+      if (trukInputEl) trukInputEl.value = '';
+      if (legacyEl) legacyEl.value = '';
 
       showToast(`Loader: ${operator} - ${formatJirgenLiter(jirgen, liter)}`, 'success');
       addHistory('loader', `Loader: ${operator} - ${formatJirgenLiter(jirgen, liter)} jirgen`);
@@ -4650,42 +4698,55 @@ async function saveMasterData() {
     function editLoader(idx) {
       const item = data.loader[idx];
       if (!item) return;
-      const newOpr = prompt('Edit operator:', item.operator);
-      if (newOpr === null) return;
-      const newHmPrev = prompt('Edit HM Awal (Sebelum isi):', item.hmPrev || '');
-      if (newHmPrev === null) return;
-      const newHmIsi = prompt('Edit HM Akhir (Saat isi):', item.hmIsi || '');
-      if (newHmIsi === null) return;
-      const newWaktu = prompt('Edit waktu isi (HH:MM):', item.waktu || '');
-      if (newWaktu === null) return;
-      const curJL = formatJirgenLiter(item.jirgen, item.liter);
-      const newJumlah = prompt('Edit jumlah air (cth: 3 atau 2.15):', curJL);
-      if (newJumlah === null) return;
-      let j = 0, l = 0;
-      const { jirgen: parsedJ, liter: parsedL } = parseJumlahStr(newJumlah); j = parsedJ; l = parsedL;
-      
-      const curSumber = item.sumber || 'Genset';
-      let newSumber = prompt('Edit Sumber Solar.\nKetik "truk" jika dari Truk/Tambang.\nKetik "genset" jika dari Genset:', curSumber);
-      if (newSumber === null) return;
-      let s = newSumber.trim().toLowerCase();
-      newSumber = (s.includes('truk') || s.includes('tambang')) ? 'Truk' : 'Genset';
 
-      if (!newOpr.trim()) { showToast('Operator tidak boleh kosong!', 'error'); return; }
-      data.loader[idx].operator = newOpr.trim();
-      data.loader[idx].hmPrev = newHmPrev.trim();
-      data.loader[idx].hmIsi = newHmIsi.trim();
-      
-      const hmIsiFloat = parseFloat(newHmIsi) || 0;
-      const hmPrevFloat = parseFloat(newHmPrev) || 0;
-      data.loader[idx].selisihHm = (newHmIsi && newHmPrev) ? (hmIsiFloat - hmPrevFloat) : 0;
-      
-      data.loader[idx].waktu = newWaktu.trim();
-      data.loader[idx].sumber = newSumber;
-      data.loader[idx].jirgen = j;
-      data.loader[idx].liter = l;
-      saveData(); renderLoader(); updateSummary();
-      showToast('Data loader berhasil diubah!', 'success');
-      addHistory('loader', 'Edit Loader: ' + newOpr.trim() + ' - ' + formatJirgenLiter(j, l) + ' jirgen');
+      const oprSelect = document.getElementById('loaderOperator');
+      const isCadanganBox = document.getElementById('loaderOprCadangan');
+      const rawOpr = item.operator || '';
+      const isDaniel = rawOpr.includes('(Opr Daniel)') || rawOpr.trim() === 'Daniel';
+      const cleanOpr = rawOpr.replace(/\s*\(.*?\)\s*/g, '').trim();
+
+      if (oprSelect && oprSelect.options) {
+        let matched = false;
+        for (let i = 0; i < oprSelect.options.length; i++) {
+          if (oprSelect.options[i].value.toLowerCase() === cleanOpr.toLowerCase()) {
+            oprSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) oprSelect.value = cleanOpr;
+      } else if (oprSelect) {
+        oprSelect.value = cleanOpr;
+      }
+      if (isCadanganBox) isCadanganBox.checked = isDaniel;
+
+      document.getElementById('loaderHmIsi').value = item.hmIsi || '';
+      document.getElementById('loaderHmPrev').value = item.hmPrev || '';
+      document.getElementById('loaderWaktu').value = item.waktu || '';
+
+      const gensetInput = document.getElementById('loaderInputGenset');
+      const trukInput = document.getElementById('loaderInputTruk');
+      if (gensetInput && trukInput && (item.jirgenGenset !== undefined || item.jirgenTruk !== undefined)) {
+        gensetInput.value = (item.jirgenGenset > 0 || item.literGenset > 0) ? `${item.jirgenGenset || 0}${item.literGenset > 0 ? '.' + item.literGenset : ''}` : '';
+        trukInput.value = (item.jirgenTruk > 0 || item.literTruk > 0) ? `${item.jirgenTruk || 0}${item.literTruk > 0 ? '.' + item.literTruk : ''}` : '';
+      } else if (gensetInput && trukInput) {
+        const legacyVal = (item.jirgen > 0 || item.liter > 0) ? `${item.jirgen}${item.liter > 0 ? '.' + item.liter : ''}` : '';
+        if (item.sumber === 'Truk') {
+          gensetInput.value = '';
+          trukInput.value = legacyVal;
+        } else {
+          gensetInput.value = legacyVal;
+          trukInput.value = '';
+        }
+      }
+
+      data.loader.splice(idx, 1);
+      saveData();
+      renderLoader();
+      updateSummary();
+
+      document.getElementById('loaderOperator').focus();
+      showToast('Silakan edit data di form atas, lalu klik Tambah', 'info');
     }
 
     function editExa(idx) {
@@ -4889,7 +4950,15 @@ async function saveMasterData() {
           <td>${item.waktu || '-'}</td>
           <td>
             <strong>${formatJirgenLiter(item.jirgen, item.liter)}</strong>
-            <br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:${item.sumber==='Truk'?'#feebc8':'#e2e8f0'}; color:${item.sumber==='Truk'?'#c05621':'#4a5568'};">${item.sumber||'Genset'}</span>
+            ${(() => {
+              if ((item.jirgenGenset !== undefined || item.jirgenTruk !== undefined) && item.sumber === 'Keduanya') {
+                return '<br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#e2e8f0; color:#4a5568;">Genset: ' + formatJirgenLiter(item.jirgenGenset||0, item.literGenset||0) + '</span>&nbsp;<span style="font-size:10px; padding:2px 4px; border-radius:4px; background:#feebc8; color:#c05621;">Truk: ' + formatJirgenLiter(item.jirgenTruk||0, item.literTruk||0) + '</span>';
+              } else {
+                const bgCol = item.sumber === 'Truk' ? '#feebc8' : '#e2e8f0';
+                const txCol = item.sumber === 'Truk' ? '#c05621' : '#4a5568';
+                return '<br><span style="font-size:10px; padding:2px 4px; border-radius:4px; background:' + bgCol + '; color:' + txCol + ';">' + (item.sumber || 'Genset') + '</span>';
+              }
+            })()}
           </td>
           <td style="display:flex;gap:4px;"><button class="btn" style="background:var(--accent);padding:0.2rem 0.4rem;font-size:11px;" onclick="editLoader(${i})">✏️</button><button class="delete-btn" onclick="deleteLoader(${i})">✕</button></td>
         </tr>`;
@@ -5251,8 +5320,13 @@ async function saveMasterData() {
       data.loader.forEach(item => { 
         const lit = toTotalLiters(item.jirgen, item.liter);
         totalLoader += lit; 
-        if (item.sumber === 'Truk') keluarTambangTruk += lit;
-        if (item.sumber === 'Genset') keluarGenset += lit;
+        if (item.sumber === 'Keduanya') {
+          keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+          keluarTambangTruk += toTotalLiters(item.jirgenTruk || 0, item.literTruk || 0);
+        } else {
+          if (item.sumber === 'Truk') keluarTambangTruk += lit;
+          if (item.sumber === 'Genset' || !item.sumber) keluarGenset += lit;
+        }
       });
 
       let totalExa = 0;
@@ -5446,7 +5520,9 @@ async function saveMasterData() {
 
       let keluarGenset = 0;
       (data.loader || []).forEach(item => {
-        if (item.sumber === 'Genset' || !item.sumber) {
+        if (item.sumber === 'Keduanya') {
+          keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+        } else if (item.sumber === 'Genset' || !item.sumber) {
           keluarGenset += toTotalLiters(item.jirgen, item.liter);
         }
       });
