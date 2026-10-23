@@ -1839,9 +1839,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
         <!-- Two linked Input Columns -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:16px;">
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-weight:600; color:#60a5fa;">⛽ Stok Real Fisik di Genset Saat Ini</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="form-label" style="font-weight:600; color:#60a5fa; margin-bottom:0;">⛽ Stok Real Fisik di Genset Saat Ini</label>
+              <span id="gensetRealStatusBadge" style="font-size:11px; padding:2px 8px; border-radius:4px; font-weight:600; background:rgba(59,130,246,0.15); color:#60a5fa;">🔄 Bersambung Otomatis</span>
+            </div>
             <input type="text" inputmode="text" class="form-input" id="stokRealGensetInput" placeholder="Contoh: 45.10" oninput="handleStokRealInput(this.value)">
-            <span class="jirgen-hint">Diukur dari fisik tangki genset (Jerigen . Liter)</span>
+            <span class="jirgen-hint" id="gensetRealHint">Otomatis bersambung dari hari kemarin. Ketik angka jika ingin mengubah stok fisik manual.</span>
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label" style="font-weight:600; color:#f87171;">📉 Hasil Minus Fisik di Genset (Pengurang)</label>
@@ -3338,6 +3341,99 @@ async function saveMasterData() {
       return 0;
     }
 
+    function calcDayRealGensetEndingLiters(dayData) {
+      if (!dayData) return null;
+      const rawReal = (dayData.stokRealGenset || '').trim();
+      const rawMinus = (dayData.minusRealGenset || '').trim();
+      const isManual = dayData.isManualRealGenset === true || (dayData.isManualRealGenset !== false && (rawReal !== '' || rawMinus !== ''));
+
+      if (isManual) {
+        if (rawReal) {
+          const p = parseJumlahStr(rawReal);
+          return toTotalLiters(p.jirgen, p.liter);
+        }
+        if (rawMinus) {
+          const p = parseJumlahStr(rawMinus);
+          const minusL = toTotalLiters(p.jirgen, p.liter);
+          let prevL = toTotalLiters(dayData.stockPrev?.jirgen, dayData.stockPrev?.liter);
+          let m = 0;
+          (dayData.masuk || []).forEach(item => {
+            if (!item.lokasi || (item.lokasi || '').toLowerCase() === 'genset') m += toTotalLiters(item.jirgen, item.liter);
+          });
+          let k = 0;
+          (dayData.loader || []).forEach(item => {
+            if (item.sumber === 'Keduanya') k += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+            else if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter);
+          });
+          (dayData.exa || []).forEach(item => { if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter); });
+          (dayData.roda10 || []).forEach(item => {
+            if (item.sumber === 'Keduanya') k += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+            else if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter);
+          });
+          (dayData.pabrik || []).forEach(item => { if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter); });
+          return Math.max(0, prevL + m - k - minusL);
+        }
+      }
+
+      if (dayData.gensetRealPrev !== undefined && dayData.gensetRealPrev !== null) {
+        let m = 0;
+        (dayData.masuk || []).forEach(item => {
+          if (!item.lokasi || (item.lokasi || '').toLowerCase() === 'genset') m += toTotalLiters(item.jirgen, item.liter);
+        });
+        let k = 0;
+        (dayData.loader || []).forEach(item => {
+          if (item.sumber === 'Keduanya') k += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+          else if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter);
+        });
+        (dayData.exa || []).forEach(item => { if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter); });
+        (dayData.roda10 || []).forEach(item => {
+          if (item.sumber === 'Keduanya') k += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+          else if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter);
+        });
+        (dayData.pabrik || []).forEach(item => { if (item.sumber === 'Genset' || !item.sumber) k += toTotalLiters(item.jirgen, item.liter); });
+        return Math.max(0, dayData.gensetRealPrev + m - k);
+      }
+
+      if (rawReal) {
+        const p = parseJumlahStr(rawReal);
+        return toTotalLiters(p.jirgen, p.liter);
+      }
+
+      return null;
+    }
+
+    async function findPreviousRealGensetLiters(dateStr) {
+      let d = new Date(dateStr);
+      for (let i = 1; i <= 30; i++) {
+        d.setDate(d.getDate() - 1);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const prevDateStr = `${yyyy}-${mm}-${dd}`;
+        const ym = `${yyyy}-${mm}`;
+
+        if (monthlyDataCache[ym] && monthlyDataCache[ym][prevDateStr]) {
+          const cached = monthlyDataCache[ym][prevDateStr];
+          const r = calcDayRealGensetEndingLiters(cached);
+          if (r !== null) return r;
+        }
+
+        try {
+          const res = await fetch('/api/getData?date=' + prevDateStr + '&t=' + new Date().getTime());
+          if (res.ok) {
+            const fetchedData = await res.json();
+            if (fetchedData) {
+              const r = calcDayRealGensetEndingLiters(fetchedData);
+              if (r !== null) return r;
+            }
+          }
+        } catch (e) {
+          // ignore error and continue lookback
+        }
+      }
+      return null;
+    }
+
     async function loadData() {
       showLoading('Memuat Data...');
       try {
@@ -3350,7 +3446,13 @@ async function saveMasterData() {
             showLoading('Mencari sisa air hari sebelumnya...');
             const prevLiters = await findPreviousStockLiters(currentDate);
             const prevJL = fromTotalLiters(prevLiters);
-            data = { stockPrev: { jirgen: prevJL.jirgen, liter: prevJL.liter }, masuk: [], loader: [], exa: [], roda10: [], pabrik: [] };
+            const prevRealLiters = await findPreviousRealGensetLiters(currentDate);
+            data = { 
+              stockPrev: { jirgen: prevJL.jirgen, liter: prevJL.liter }, 
+              masuk: [], loader: [], exa: [], roda10: [], pabrik: [],
+              gensetRealPrev: prevRealLiters,
+              isManualRealGenset: false
+            };
             saveData(); // Auto save initial stock for the new day
             showToast('Sisa air hari sebelumnya otomatis diisi', 'success');
           }
@@ -3371,13 +3473,18 @@ async function saveMasterData() {
       const displayLit = prevLit ? prevLit.toString().replace('.', ',') : '';
       document.getElementById('stockPrevInput').value = displayLit ? `${prevJir}.${displayLit}` : (prevJir > 0 ? prevJir.toString() : '');
       
-      // Populate Stok Real & Minus
-      const elRealIn = document.getElementById('stokRealGensetInput');
-      const elMinusIn = document.getElementById('minusRealGensetInput');
-      if (elRealIn) elRealIn.value = data.stokRealGenset || '';
-      if (elMinusIn) elMinusIn.value = data.minusRealGenset || '';
-      updateComparisonGenset();
+      // Determine manual flag & fallback to previous real if needed
+      if (data.isManualRealGenset === undefined) {
+        data.isManualRealGenset = Boolean((data.stokRealGenset && data.stokRealGenset.trim()) && (data.gensetRealPrev === undefined || data.gensetRealPrev === null));
+      }
+      if (!data.isManualRealGenset && (data.gensetRealPrev === undefined || data.gensetRealPrev === null)) {
+        const prevReal = await findPreviousRealGensetLiters(currentDate);
+        if (prevReal !== null) {
+          data.gensetRealPrev = prevReal;
+        }
+      }
 
+      updateComparisonGenset();
       hideLoading();
     }
 
@@ -5554,50 +5661,52 @@ async function saveMasterData() {
     }
 
     function handleStokRealInput(val) {
-      data.stokRealGenset = (val || '').trim();
-      const { gensetWebLiters } = getGensetSolarStats();
-      const webLiters = gensetWebLiters;
-
-      if (!val.trim()) {
+      val = (val || '').trim();
+      if (!val) {
+        data.isManualRealGenset = false;
+        data.stokRealGenset = '';
         data.minusRealGenset = '';
         const elMinus = document.getElementById('minusRealGensetInput');
         if (elMinus) elMinus.value = '';
       } else {
+        data.isManualRealGenset = true;
+        data.stokRealGenset = val;
+        const { gensetWebLiters } = getGensetSolarStats();
         const parsed = parseJumlahStr(val);
         const realLiters = toTotalLiters(parsed.jirgen, parsed.liter);
-        const minusLiters = webLiters - realLiters;
+        const minusLiters = gensetWebLiters - realLiters;
         if (minusLiters > 0.05) {
-          const minusJL = formatFromLiters(minusLiters);
-          data.minusRealGenset = minusJL;
-          const elMinus = document.getElementById('minusRealGensetInput');
-          if (elMinus) elMinus.value = minusJL;
+          data.minusRealGenset = formatFromLiters(minusLiters);
+        } else if (minusLiters < -0.05) {
+          data.minusRealGenset = '-' + formatFromLiters(Math.abs(minusLiters));
         } else {
           data.minusRealGenset = '0';
-          const elMinus = document.getElementById('minusRealGensetInput');
-          if (elMinus) elMinus.value = '0';
         }
+        const elMinus = document.getElementById('minusRealGensetInput');
+        if (elMinus) elMinus.value = data.minusRealGenset;
       }
       saveData();
       updateComparisonGenset();
     }
 
     function handleMinusRealInput(val) {
-      data.minusRealGenset = (val || '').trim();
-      const { gensetWebLiters } = getGensetSolarStats();
-      const webLiters = gensetWebLiters;
-
-      if (!val.trim()) {
+      val = (val || '').trim();
+      if (!val) {
+        data.isManualRealGenset = false;
         data.stokRealGenset = '';
+        data.minusRealGenset = '';
         const elReal = document.getElementById('stokRealGensetInput');
         if (elReal) elReal.value = '';
       } else {
+        data.isManualRealGenset = true;
+        data.minusRealGenset = val;
+        const { gensetWebLiters } = getGensetSolarStats();
         const parsed = parseJumlahStr(val);
         const minusLiters = toTotalLiters(parsed.jirgen, parsed.liter);
-        const realLiters = Math.max(0, webLiters - minusLiters);
-        const realJL = formatFromLiters(realLiters);
-        data.stokRealGenset = realJL;
+        const realLiters = Math.max(0, gensetWebLiters - minusLiters);
+        data.stokRealGenset = formatFromLiters(realLiters);
         const elReal = document.getElementById('stokRealGensetInput');
-        if (elReal) elReal.value = realJL;
+        if (elReal) elReal.value = data.stokRealGenset;
       }
       saveData();
       updateComparisonGenset();
@@ -5613,20 +5722,64 @@ async function saveMasterData() {
       if (elBoxBos) elBoxBos.textContent = formatFromLiters(webLiters);
       if (elBoxBosDet) elBoxBosDet.textContent = webLiters + ' Liter';
 
-      const rawReal = (data.stokRealGenset || '').trim();
-      const rawMinus = (data.minusRealGenset || '').trim();
-
+      const isManual = data.isManualRealGenset === true;
       let realLiters = webLiters;
       let minusLiters = 0;
 
-      if (rawReal) {
-        const pReal = parseJumlahStr(rawReal);
-        realLiters = toTotalLiters(pReal.jirgen, pReal.liter);
-        minusLiters = webLiters - realLiters;
-      } else if (rawMinus) {
-        const pMinus = parseJumlahStr(rawMinus);
-        minusLiters = toTotalLiters(pMinus.jirgen, pMinus.liter);
-        realLiters = Math.max(0, webLiters - minusLiters);
+      if (isManual) {
+        const rawReal = (data.stokRealGenset || '').trim();
+        const rawMinus = (data.minusRealGenset || '').trim();
+        if (rawReal) {
+          const pReal = parseJumlahStr(rawReal);
+          realLiters = toTotalLiters(pReal.jirgen, pReal.liter);
+          minusLiters = webLiters - realLiters;
+        } else if (rawMinus) {
+          const pMinus = parseJumlahStr(rawMinus);
+          minusLiters = toTotalLiters(pMinus.jirgen, pMinus.liter);
+          realLiters = Math.max(0, webLiters - minusLiters);
+        }
+      } else {
+        // Otomatis bersambung dari gensetRealPrev
+        if (data.gensetRealPrev !== undefined && data.gensetRealPrev !== null) {
+          realLiters = Math.max(0, data.gensetRealPrev + masukGenset - keluarGenset);
+          minusLiters = webLiters - realLiters;
+        } else {
+          const rawReal = (data.stokRealGenset || '').trim();
+          if (rawReal) {
+            const pReal = parseJumlahStr(rawReal);
+            realLiters = toTotalLiters(pReal.jirgen, pReal.liter);
+            minusLiters = webLiters - realLiters;
+          }
+        }
+        data.stokRealGenset = formatFromLiters(realLiters);
+        data.minusRealGenset = (minusLiters > 0.05 ? formatFromLiters(minusLiters) : (minusLiters < -0.05 ? ('-' + formatFromLiters(Math.abs(minusLiters))) : '0'));
+      }
+
+      // Update Input Fields (only when not active focus)
+      const elRealIn = document.getElementById('stokRealGensetInput');
+      const elMinusIn = document.getElementById('minusRealGensetInput');
+      if (elRealIn && document.activeElement !== elRealIn) {
+        elRealIn.value = formatFromLiters(realLiters);
+      }
+      if (elMinusIn && document.activeElement !== elMinusIn) {
+        elMinusIn.value = (minusLiters > 0.05 ? formatFromLiters(minusLiters) : (minusLiters < -0.05 ? ('-' + formatFromLiters(Math.abs(minusLiters))) : '0'));
+      }
+
+      // Update Badge & Hint
+      const elBadge = document.getElementById('gensetRealStatusBadge');
+      const elHint = document.getElementById('gensetRealHint');
+      if (elBadge) {
+        if (isManual) {
+          elBadge.innerHTML = '✏️ Input Manual';
+          elBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+          elBadge.style.color = '#fbbf24';
+          if (elHint) elHint.textContent = 'Stok real ditentukan manual untuk tanggal ini. Hapus isi form untuk mengembalikan ke bersambung otomatis.';
+        } else {
+          elBadge.innerHTML = '🔄 Bersambung Otomatis';
+          elBadge.style.background = 'rgba(59, 130, 246, 0.2)';
+          elBadge.style.color = '#60a5fa';
+          if (elHint) elHint.textContent = 'Otomatis bersambung dari hari kemarin. Ketik angka jika ingin mengubah stok fisik manual.';
+        }
       }
 
       // Update Box Minus
@@ -5678,7 +5831,7 @@ async function saveMasterData() {
       const quickVal = document.getElementById('quickRealStockVal');
       const quickMin = document.getElementById('quickMinusVal');
       if (quickBadge) {
-        if (Math.abs(minusLiters) > 0.05 || rawReal || rawMinus) {
+        if (Math.abs(minusLiters) > 0.05 || (data.stokRealGenset && data.stokRealGenset.trim()) || (data.minusRealGenset && data.minusRealGenset.trim())) {
           quickBadge.style.display = 'block';
           if (quickVal) quickVal.textContent = formatFromLiters(realLiters);
           if (quickMin) quickMin.textContent = minusStr;
@@ -5690,7 +5843,7 @@ async function saveMasterData() {
       // Update Status Alert Box
       const resDiv = document.getElementById('hasilPencocokan');
       if (resDiv) {
-        if (!rawReal && !rawMinus) {
+        if (Math.abs(minusLiters) < 0.05 && !isManual) {
           resDiv.style.display = 'none';
         } else {
           resDiv.style.display = 'block';
