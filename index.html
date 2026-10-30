@@ -4435,15 +4435,16 @@ async function saveMasterData() {
 
       RETASE_MATERIAL_DEFS.forEach(m => {
         let rowSum = 0;
-        const isLansir = (m.key === 'lansirSetengah' || m.key === 'lansirSatu');
+        // Lansir terhitung untuk pabrik, BUKAN untuk operator tambang (exca tambang)
+        const isLansirForExca = (m.key === 'lansir' || m.key === 'lansirSetengah' || m.key === 'lansirSatu');
         excaList.forEach(op => {
           const input = document.getElementById('cmat_' + op + '_' + m.key);
           const val = parseInt(input?.value) || 0;
           rowSum += val;
-          if (!isLansir) {
+          if (!isLansirForExca) {
             excaTotals[op] += val;
           }
-          if (val > 0) {
+          if (val > 0 && !isLansirForExca) {
             excaMatBreakdowns[op].push(m.label + ' ' + val);
           }
         });
@@ -4454,7 +4455,7 @@ async function saveMasterData() {
         }
         const rowTotEl = document.getElementById('cmat_rowTot_' + m.key);
         if (rowTotEl) rowTotEl.textContent = rowSum;
-        if (!isLansir) {
+        if (!isLansirForExca) {
           grandTotal += rowSum;
         }
       });
@@ -4499,10 +4500,21 @@ async function saveMasterData() {
       }
     }
 
+    function getExcaTambangRetaseTarget() {
+      const sp = parseInt(document.getElementById('r10_sp')?.value) || 0;
+      const nd = parseInt(document.getElementById('r10_nd')?.value) || 0;
+      const pasir = parseInt(document.getElementById('r10_pasir')?.value) || 0;
+      const sirtu = parseInt(document.getElementById('r10_sirtu')?.value) || 0;
+      const kosongan = parseInt(document.getElementById('r10_kosongan')?.value) || 0;
+      const pembuangan = parseInt(document.getElementById('r10_pembuangan')?.value) || 0;
+      const retaseBiasa = parseInt(document.getElementById('roda10Retase')?.value) || 0;
+      return sp + nd + pasir + sirtu + kosongan + pembuangan + retaseBiasa;
+    }
+
     function autoSplitCampur() {
-      const total = getTotalRetaseFromForm();
-      const half1 = Math.ceil(total / 2);
-      const half2 = Math.floor(total / 2);
+      const targetExca = getExcaTambangRetaseTarget();
+      const half1 = Math.ceil(targetExca / 2);
+      const half2 = Math.floor(targetExca / 2);
       const elAnci = document.getElementById('campurExca_ANCI');
       const elIwan = document.getElementById('campurExca_IWAN');
       if (elAnci) elAnci.value = half1;
@@ -4511,7 +4523,8 @@ async function saveMasterData() {
     }
 
     function updateCampurStatus() {
-      const total = getTotalRetaseFromForm();
+      const targetExca = getExcaTambangRetaseTarget();
+      const lansir = parseInt(document.getElementById('r10_lansir')?.value) || 0;
       let sum = 0;
       const elAnci = document.getElementById('campurExca_ANCI');
       const elIwan = document.getElementById('campurExca_IWAN');
@@ -4528,14 +4541,15 @@ async function saveMasterData() {
 
       const note = document.getElementById('campurStatusNote');
       if (note) {
-        if (total === 0) {
-          note.innerHTML = '<span style="color:var(--text-secondary);">Isi jumlah retase sopir terlebih dahulu di form atas.</span>';
-        } else if (sum === total) {
-          note.innerHTML = '<span style="color:var(--success);font-weight:700;">✅ Terbagi pas: ' + sum + ' dari ' + total + ' Rit</span>';
-        } else if (sum < total) {
-          note.innerHTML = '<span style="color:var(--warning);font-weight:700;">⚠️ Terbagi: ' + sum + ' / Total: ' + total + ' Rit (Kurang ' + (total - sum) + ' Rit)</span>';
+        const lansirNote = lansir > 0 ? ` (${lansir} Rit Lansir untuk Pabrik)` : '';
+        if (targetExca === 0) {
+          note.innerHTML = '<span style="color:var(--text-secondary);">' + (lansir > 0 ? `Retase ${lansir} Lansir masuk ke Pabrik (Exca Tambang: 0 Rit).` : 'Isi jumlah retase sopir terlebih dahulu di form atas.') + '</span>';
+        } else if (sum === targetExca) {
+          note.innerHTML = '<span style="color:var(--success);font-weight:700;">✅ Terbagi pas: ' + sum + ' dari ' + targetExca + ' Rit Exca Tambang' + lansirNote + '</span>';
+        } else if (sum < targetExca) {
+          note.innerHTML = '<span style="color:var(--warning);font-weight:700;">⚠️ Terbagi: ' + sum + ' / Target Exca: ' + targetExca + ' Rit (Kurang ' + (targetExca - sum) + ' Rit)' + lansirNote + '</span>';
         } else {
-          note.innerHTML = '<span style="color:var(--danger);font-weight:700;">❌ Terbagi: ' + sum + ' / Total: ' + total + ' Rit (Lebih ' + (sum - total) + ' Rit)</span>';
+          note.innerHTML = '<span style="color:var(--danger);font-weight:700;">❌ Terbagi: ' + sum + ' / Target Exca: ' + targetExca + ' Rit (Lebih ' + (sum - targetExca) + ' Rit)' + lansirNote + '</span>';
         }
       }
     }
@@ -4574,8 +4588,9 @@ async function saveMasterData() {
               const input = document.getElementById('cmat_' + op + '_' + m.key);
               const val = parseInt(input?.value) || 0;
               if (val > 0) {
-                opMats[m.key] = val;
-                if (m.key !== 'lansirSetengah' && m.key !== 'lansirSatu') {
+                // Lansir untuk pabrik, bukan untuk exca tambang
+                if (m.key !== 'lansir' && m.key !== 'lansirSetengah' && m.key !== 'lansirSatu') {
+                  opMats[m.key] = val;
                   opRetase += val;
                 }
               }
@@ -4598,16 +4613,22 @@ async function saveMasterData() {
       
       const excaName = selected.value.toUpperCase().trim();
       const breakdown = {};
-      breakdown[excaName] = totalRetase || 0;
+      
+      // Lansir terhitung untuk pabrik, BUKAN untuk exca tambang (operator tambang)
+      const lansirVal = parseInt(document.getElementById('r10_lansir')?.value) || 0;
+      const excaTambangRetase = Math.max(0, (totalRetase || 0) - lansirVal);
+      breakdown[excaName] = excaTambangRetase;
 
-      // Single exca: all retase materials belong to this exca
+      // Single exca: hanya material tambang (tanpa lansir, lansirSetengah, lansirSatu)
       const excaMaterials = {};
       excaMaterials[excaName] = {};
       RETASE_MATERIAL_DEFS.forEach(m => {
-        const el = document.getElementById('r10_' + m.key);
-        const val = parseInt(el?.value) || 0;
-        if (val > 0) {
-          excaMaterials[excaName][m.key] = val;
+        if (m.key !== 'lansir' && m.key !== 'lansirSetengah' && m.key !== 'lansirSatu') {
+          const el = document.getElementById('r10_' + m.key);
+          const val = parseInt(el?.value) || 0;
+          if (val > 0) {
+            excaMaterials[excaName][m.key] = val;
+          }
         }
       });
 
@@ -4774,7 +4795,7 @@ async function saveMasterData() {
     function getExcaRetaseSummary() {
       const summary = {}; // { "ANCI": { total: 5, sopirs: { "BAKRI": 3, ... } }, "IWAN": { ... } }
       (data.roda10 || []).forEach(truck => {
-        // Jika terdapat rincian material per exca (excaMaterials), hitung retase murni tanpa lansir:
+        // Jika terdapat rincian material per exca (excaMaterials), hitung retase tambang murni (tanpa lansir):
         if (truck.excaMaterials && Object.keys(truck.excaMaterials).length > 0) {
           Object.entries(truck.excaMaterials).forEach(([exca, mats]) => {
             const excaUpper = (exca || '').toUpperCase().trim();
@@ -4782,11 +4803,12 @@ async function saveMasterData() {
             let count = 0;
             Object.entries(mats || {}).forEach(([mKey, val]) => {
               const k = mKey.toLowerCase();
-              // Lansir murni dihitung retase; lansir 1/2 hari & 1 hari tidak terhitung
-              if (k !== 'lansirsetengah' && k !== 'lansirsatu' && k !== 'lansir 1/2 hari' && k !== 'lansir 1 hari' && !k.includes('1/2') && !k.includes('1 hari')) {
+              // Lansir untuk pabrik, TIDAK terhitung untuk operator exca tambang
+              if (k !== 'lansir' && k !== 'lansirsetengah' && k !== 'lansirsatu' && k !== 'lansir 1/2 hari' && k !== 'lansir 1 hari' && !k.includes('lansir') && !k.includes('1/2') && !k.includes('1 hari')) {
                 count += parseInt(val) || 0;
               }
             });
+            if (count <= 0) return;
             if (!summary[excaUpper]) summary[excaUpper] = { total: 0, sopirs: {} };
             summary[excaUpper].total += count;
             summary[excaUpper].sopirs[truck.sopir] = (summary[excaUpper].sopirs[truck.sopir] || 0) + count;
@@ -4795,10 +4817,18 @@ async function saveMasterData() {
         }
 
         const rawBreakdown = truck.excaBreakdown || retaseItemsToBreakdown(truck.retaseItems);
-        Object.entries(rawBreakdown).forEach(([exca, count]) => {
+        const entries = Object.entries(rawBreakdown || {}).filter(([_, c]) => (parseInt(c) || 0) > 0);
+        const lansirTruck = parseInt(truck.retaseObj?.lansir) || 0;
+
+        entries.forEach(([exca, count]) => {
           const excaUpper = (exca || '').toUpperCase().trim();
           if (!excaUpper) return;
-          const numCount = parseInt(count) || 0;
+          let numCount = parseInt(count) || 0;
+          if (numCount <= 0) return;
+          // Kurangi lansir jika data lama hanya simpan breakdown kasar
+          if (lansirTruck > 0 && entries.length === 1 && numCount >= lansirTruck) {
+            numCount = Math.max(0, numCount - lansirTruck);
+          }
           if (numCount <= 0) return;
           if (!summary[excaUpper]) summary[excaUpper] = { total: 0, sopirs: {} };
           summary[excaUpper].total += numCount;
@@ -5260,7 +5290,8 @@ async function saveMasterData() {
         // Build exca info from excaBreakdown / excaMaterials (new) or retaseItems (old)
         let retaseItemsHtml = '';
         const breakdown = item.excaBreakdown || retaseItemsToBreakdown(item.retaseItems);
-        if (breakdown && Object.keys(breakdown).length > 0) {
+        const truckLansir = item.retaseObj ? (item.retaseObj.lansir || 0) : 0;
+        if ((breakdown && Object.keys(breakdown).length > 0) || truckLansir > 0) {
           if (item.excaMaterials && Object.keys(item.excaMaterials).length > 0) {
             const shortLabels = {
               sp: 'SP', nd: 'ND', pasir: 'Pasir', sirtu: 'Sirtu', kosongan: 'Kosong',
@@ -5269,19 +5300,32 @@ async function saveMasterData() {
             const detailParts = [];
             Object.entries(item.excaMaterials).forEach(([op, mats]) => {
               const matParts = Object.entries(mats)
-                .filter(([_, cnt]) => cnt > 0)
+                .filter(([mKey, cnt]) => cnt > 0 && mKey !== 'lansir' && !mKey.toLowerCase().includes('lansir'))
                 .map(([mKey, cnt]) => (shortLabels[mKey] || mKey) + ' ' + cnt);
               if (matParts.length > 0) {
                 detailParts.push(op + ' (' + matParts.join(', ') + ')');
-              } else if (breakdown[op]) {
+              } else if (breakdown[op] > 0) {
                 detailParts.push(op + ': ' + breakdown[op]);
               }
             });
-            const badgeText = detailParts.join(' | ');
-            retaseItemsHtml = '<br><span style="font-size:9.5px;padding:2px 5px;border-radius:3px;background:rgba(59,130,246,0.15);color:#93c5fd;font-weight:600;">📍 ' + badgeText + '</span>';
+            if (truckLansir > 0) {
+              detailParts.push('Pabrik (Lansir ' + truckLansir + ')');
+            }
+            if (detailParts.length > 0) {
+              const badgeText = detailParts.join(' | ');
+              retaseItemsHtml = '<br><span style="font-size:9.5px;padding:2px 5px;border-radius:3px;background:rgba(59,130,246,0.15);color:#93c5fd;font-weight:600;">📍 ' + badgeText + '</span>';
+            }
           } else {
-            const parts = Object.entries(breakdown).map(function(entry) { return entry[0] + ':' + entry[1]; }).join(', ');
-            retaseItemsHtml = '<br><span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#2d3748;color:#edf2f7;">📍 ' + parts + '</span>';
+            const parts = [];
+            Object.entries(breakdown || {}).forEach(function(entry) {
+              if (entry[1] > 0) parts.push(entry[0] + ':' + entry[1]);
+            });
+            if (truckLansir > 0) {
+              parts.push('Pabrik(Lansir):' + truckLansir);
+            }
+            if (parts.length > 0) {
+              retaseItemsHtml = '<br><span style="font-size:9px;padding:1px 4px;border-radius:3px;background:#2d3748;color:#edf2f7;">📍 ' + parts.join(', ') + '</span>';
+            }
           }
         }
 
@@ -6035,16 +6079,14 @@ async function saveMasterData() {
     // RINCIAN MATERIAL RETASE PER EXCAVATOR
     // ============================================
     function getExcaMaterialBreakdown(roda10Data) {
+      // Hanya material tambang yang dimuat oleh Exca Tambang (Lansir untuk Pabrik, tidak masuk keterangan Exca)
       const materialKeys = [
         { key: 'sp', label: 'SP' },
         { key: 'nd', label: 'ND' },
         { key: 'pasir', label: 'Pasir' },
         { key: 'sirtu', label: 'Sirtu' },
         { key: 'kosongan', label: 'Kosongan' },
-        { key: 'pembuangan', label: 'Pembuangan' },
-        { key: 'lansir', label: 'Lansir' },
-        { key: 'lansirSetengah', label: 'Lansir 1/2 hari' },
-        { key: 'lansirSatu', label: 'Lansir 1 hari' }
+        { key: 'pembuangan', label: 'Pembuangan' }
       ];
 
       const matKeyMap = {};
@@ -6060,11 +6102,13 @@ async function saveMasterData() {
         if (truck.excaMaterials && Object.keys(truck.excaMaterials).length > 0) {
           Object.entries(truck.excaMaterials).forEach(([op, mats]) => {
             const opUpper = op.toUpperCase().trim();
-            if (!excaMaterials[opUpper]) excaMaterials[opUpper] = {};
             Object.entries(mats || {}).forEach(([mKey, count]) => {
+              const k = mKey.toLowerCase();
+              if (k === 'lansir' || k.includes('lansir')) return; // Lansir untuk pabrik
               const num = parseInt(count) || 0;
               if (num > 0) {
-                const label = matKeyMap[mKey.toLowerCase()] || mKey;
+                if (!excaMaterials[opUpper]) excaMaterials[opUpper] = {};
+                const label = matKeyMap[k] || mKey;
                 excaMaterials[opUpper][label] = (excaMaterials[opUpper][label] || 0) + num;
               }
             });
@@ -6087,15 +6131,15 @@ async function saveMasterData() {
 
         if (excaEntries.length === 1) {
           const op = excaEntries[0][0].toUpperCase().trim();
-          if (!excaMaterials[op]) excaMaterials[op] = {};
-          
           if (truckMats.length > 0) {
+            if (!excaMaterials[op]) excaMaterials[op] = {};
             truckMats.forEach(m => {
               excaMaterials[op][m.label] = (excaMaterials[op][m.label] || 0) + m.count;
             });
           } else {
-            const genCount = parseInt(truck.retase) || excaEntries[0][1] || 0;
+            const genCount = Math.max(0, (parseInt(truck.retase) || excaEntries[0][1] || 0) - (parseInt(truck.retaseObj?.lansir) || 0));
             if (genCount > 0) {
+              if (!excaMaterials[op]) excaMaterials[op] = {};
               excaMaterials[op]['Ret'] = (excaMaterials[op]['Ret'] || 0) + genCount;
             }
           }
