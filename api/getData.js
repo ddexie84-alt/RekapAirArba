@@ -18,6 +18,26 @@ function fromTotalLiters(totalLiters) {
   };
 }
 
+function parseJumlahStr(str) {
+  if (!str) return { jirgen: 0, liter: 0 };
+  const s = String(str).trim().replace(',', '.');
+  const parts = s.split('.');
+  const jirgen = parseInt(parts[0]) || 0;
+  const liter = parts[1] !== undefined ? parseFloat('0.' + parts[1]) * 35 : 0;
+  return { jirgen, liter: Math.round(liter * 100) / 100 };
+}
+
+function formatFromLiters(totalLiters) {
+  if (totalLiters === undefined || totalLiters === null || isNaN(totalLiters)) return '0';
+  totalLiters = Math.round(totalLiters * 100) / 100;
+  const jirgen = Math.floor(totalLiters / 35);
+  const remainder = Math.round((totalLiters % 35) * 100) / 100;
+  if (remainder === 0) return '' + jirgen;
+  const desimal = Math.round((remainder / 35) * 100);
+  if (desimal === 0) return '' + jirgen;
+  return jirgen + '.' + String(desimal).padStart(2, '0');
+}
+
 function calcStockAkhirLiters(dayData) {
   if (!dayData) return 0;
   let prevLiters = 0;
@@ -34,6 +54,91 @@ function calcStockAkhirLiters(dayData) {
   (dayData.roda10 || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
   (dayData.pabrik || []).forEach(item => { totalKeluar += toTotalLiters(item.jirgen, item.liter); });
   return prevLiters + totalMasuk - totalKeluar;
+}
+
+function calcGensetMasukLiters(dayData) {
+  if (!dayData) return 0;
+  let masukGenset = 0;
+  (dayData.masuk || []).forEach(item => {
+    if (!item.lokasi || (item.lokasi || '').toLowerCase() === 'genset') {
+      masukGenset += toTotalLiters(item.jirgen, item.liter);
+    }
+  });
+  return masukGenset;
+}
+
+function calcGensetKeluarLiters(dayData) {
+  if (!dayData) return 0;
+  let keluarGenset = 0;
+  (dayData.loader || []).forEach(item => {
+    if (item.sumber === 'Keduanya') {
+      keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+    } else if (item.sumber === 'Genset' || !item.sumber) {
+      keluarGenset += toTotalLiters(item.jirgen, item.liter);
+    }
+  });
+  (dayData.exa || []).forEach(item => {
+    if (item.sumber === 'Keduanya') {
+      keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+    } else if (item.sumber === 'Genset' || !item.sumber) {
+      keluarGenset += toTotalLiters(item.jirgen, item.liter);
+    }
+  });
+  (dayData.roda10 || []).forEach(item => {
+    if (item.sumber === 'Keduanya') {
+      keluarGenset += toTotalLiters(item.jirgenGenset || 0, item.literGenset || 0);
+    } else if (item.sumber === 'Genset' || !item.sumber) {
+      keluarGenset += toTotalLiters(item.jirgen, item.liter);
+    }
+  });
+  (dayData.pabrik || []).forEach(item => {
+    if (item.sumber === 'Genset' || !item.sumber) {
+      keluarGenset += toTotalLiters(item.jirgen, item.liter);
+    }
+  });
+  return keluarGenset;
+}
+
+function calcGensetWebLiters(dayData) {
+  if (!dayData) return 0;
+  let prevLiters = 0;
+  if (dayData.stockPrev) {
+    prevLiters = toTotalLiters(dayData.stockPrev.jirgen, dayData.stockPrev.liter);
+  }
+  return prevLiters + calcGensetMasukLiters(dayData) - calcGensetKeluarLiters(dayData);
+}
+
+function calcRealGensetAkhirLiters(dayData, prevRealLiters) {
+  if (!dayData) return null;
+  const rawReal = (dayData.stokRealGenset || '').trim();
+  const rawMinus = (dayData.minusRealGenset || '').trim();
+  const isManual = dayData.isManualRealGenset === true || (dayData.isManualRealGenset !== false && (rawReal !== '' || rawMinus !== ''));
+
+  if (isManual) {
+    if (rawReal) {
+      const p = parseJumlahStr(rawReal);
+      return toTotalLiters(p.jirgen, p.liter);
+    } else if (rawMinus) {
+      const p = parseJumlahStr(rawMinus);
+      const minusL = toTotalLiters(p.jirgen, p.liter);
+      const webL = calcGensetWebLiters(dayData);
+      return Math.max(0, webL - minusL);
+    }
+  }
+
+  if (prevRealLiters !== null && prevRealLiters !== undefined) {
+    const masuk = calcGensetMasukLiters(dayData);
+    const keluar = calcGensetKeluarLiters(dayData);
+    return Math.max(0, prevRealLiters + masuk - keluar);
+  }
+
+  if (dayData.gensetRealPrev !== undefined && dayData.gensetRealPrev !== null) {
+    const masuk = calcGensetMasukLiters(dayData);
+    const keluar = calcGensetKeluarLiters(dayData);
+    return Math.max(0, dayData.gensetRealPrev + masuk - keluar);
+  }
+
+  return null;
 }
 
 export default async function handler(req, res) {
@@ -100,11 +205,24 @@ export default async function handler(req, res) {
         .sort((a, b) => b.localeCompare(a)); // sort descending
 
       let initialStockPrev = { jirgen: 0, liter: 0 };
+      let initialRealPrev = null;
+      let initialRealGenset = '';
+      let initialMinusReal = '';
+
       if (prevKeys.length > 0) {
         const mostRecentData = await kv.get(prevKeys[0]);
         if (mostRecentData) {
           const prevStockLiters = calcStockAkhirLiters(mostRecentData);
           initialStockPrev = fromTotalLiters(prevStockLiters);
+
+          const prevRealLiters = calcRealGensetAkhirLiters(mostRecentData);
+          if (prevRealLiters !== null) {
+            initialRealPrev = prevRealLiters;
+            initialRealGenset = formatFromLiters(prevRealLiters);
+            const initialWebLiters = prevStockLiters;
+            const minusL = initialWebLiters - prevRealLiters;
+            initialMinusReal = (minusL > 0.05 ? formatFromLiters(minusL) : (minusL < -0.05 ? ('-' + formatFromLiters(Math.abs(minusL))) : '0'));
+          }
         }
       }
 
@@ -115,6 +233,10 @@ export default async function handler(req, res) {
         exa: [],
         roda10: [],
         pabrik: [],
+        gensetRealPrev: initialRealPrev,
+        stokRealGenset: initialRealGenset,
+        minusRealGenset: initialMinusReal,
+        isManualRealGenset: false,
         hmHistory // Add hmHistory to response
       });
     }
