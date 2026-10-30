@@ -6396,9 +6396,26 @@ async function saveMasterData() {
         let startRowRetaseDetail = 36;
         const detailCols = [ ['B','C'], ['E','F'], ['H','I'], ['K','L'] ];
         
+        // Bersihkan area detail retase (baris 36 sampai 48) di 4 kolom agar tidak ada sisa format/data lama
+        detailCols.forEach(([col1, col2]) => {
+           for (let r = startRowRetaseDetail; r <= startRowRetaseDetail + 12; r++) {
+              const c1 = wsKeluar.getCell(col1 + r);
+              const c2 = wsKeluar.getCell(col2 + r);
+              c1.value = '';
+              c2.value = '';
+              c1.fill = { type: 'pattern', pattern: 'none' };
+              c2.fill = { type: 'pattern', pattern: 'none' };
+              c1.border = {};
+              c2.border = {};
+           }
+        });
+
+        // Hanya 10 Roda yang ISI SOLAR di hari itu yang dibuatkan rincian detail retasenya (SP dll) di Excel
         const validDrivers = data.roda10.filter(item => {
+           const hasSolar = (parseInt(item.jirgen) || 0) > 0 || (parseFloat(item.liter) || 0) > 0;
+           if (!hasSolar) return false; // Abaikan sopir 10 Roda yang tidak isi solar di hari ini
            if (!item.retaseObj) return false;
-           return Object.values(item.retaseObj).some(val => val > 0);
+           return Object.values(item.retaseObj).some(val => (parseInt(val) || 0) > 0);
         });
 
         validDrivers.forEach((driver, idx) => {
