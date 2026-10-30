@@ -1376,8 +1376,9 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Sirtu</label><input type="number" class="form-input retase-input" id="r10_sirtu" min="0" placeholder="0"></div>
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Kosongan</label><input type="number" class="form-input retase-input" id="r10_kosongan" min="0" placeholder="0"></div>
                 <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Pembuangan</label><input type="number" class="form-input retase-input" id="r10_pembuangan" min="0" placeholder="0"></div>
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1/2 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSetengah" min="0" placeholder="0"></div>
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;">Lansir 1 Hari</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;color:#38bdf8;font-weight:700;">Lansir (Dihitung Ret)</label><input type="number" class="form-input retase-input" id="r10_lansir" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">Lansir 1/2 Hari (Non-Ret)</label><input type="number" class="form-input retase-input" id="r10_lansirSetengah" min="0" placeholder="0"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">Lansir 1 Hari (Non-Ret)</label><input type="number" class="form-input retase-input" id="r10_lansirSatu" min="0" placeholder="0"></div>
               </div>
             </div>
             <!-- ============================== -->
@@ -1484,6 +1485,12 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
                             <td style="padding:3px 4px; text-align:center;"><input type="number" min="0" class="campur-mat-input form-input" id="cmat_ANCI_pembuangan" data-exca="ANCI" data-mat="pembuangan" placeholder="0" style="width:52px; text-align:center; padding:5px 2px; font-size:13px; font-weight:600;" oninput="syncMatrixToForm()"></td>
                             <td style="padding:3px 4px; text-align:center;"><input type="number" min="0" class="campur-mat-input form-input" id="cmat_IWAN_pembuangan" data-exca="IWAN" data-mat="pembuangan" placeholder="0" style="width:52px; text-align:center; padding:5px 2px; font-size:13px; font-weight:600;" oninput="syncMatrixToForm()"></td>
                             <td id="cmat_rowTot_pembuangan" style="padding:5px 6px; text-align:center; font-weight:700; font-size:12px; color:var(--text-secondary);">0</td>
+                          </tr>
+                          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:5px 8px; font-weight:600; font-size:12px; color:#38bdf8; white-space:nowrap;">Lansir</td>
+                            <td style="padding:3px 4px; text-align:center;"><input type="number" min="0" class="campur-mat-input form-input" id="cmat_ANCI_lansir" data-exca="ANCI" data-mat="lansir" placeholder="0" style="width:52px; text-align:center; padding:5px 2px; font-size:13px; font-weight:600;" oninput="syncMatrixToForm()"></td>
+                            <td style="padding:3px 4px; text-align:center;"><input type="number" min="0" class="campur-mat-input form-input" id="cmat_IWAN_lansir" data-exca="IWAN" data-mat="lansir" placeholder="0" style="width:52px; text-align:center; padding:5px 2px; font-size:13px; font-weight:600;" oninput="syncMatrixToForm()"></td>
+                            <td id="cmat_rowTot_lansir" style="padding:5px 6px; text-align:center; font-weight:700; font-size:12px; color:var(--text-secondary);">0</td>
                           </tr>
                           <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:5px 8px; font-weight:600; font-size:12px; color:var(--text-primary); white-space:nowrap;">Lansir 1/2 hari</td>
@@ -2077,6 +2084,7 @@ const TEMPLATE_KELUAR_B64 = 'UEsDBAoAAAAIACVuVl2R28AJWQEAAPAEAAATAAAAW0NvbnRlbnR
       { key: 'sirtu', label: 'Sirtu' },
       { key: 'kosongan', label: 'Kosongan' },
       { key: 'pembuangan', label: 'Pembuangan' },
+      { key: 'lansir', label: 'Lansir' },
       { key: 'lansirSetengah', label: 'Lansir 1/2 hari' },
       { key: 'lansirSatu', label: 'Lansir 1 hari' }
     ];
@@ -4100,12 +4108,15 @@ async function saveMasterData() {
         sirtu: parseInt(document.getElementById('r10_sirtu').value) || 0,
         kosongan: parseInt(document.getElementById('r10_kosongan').value) || 0,
         pembuangan: parseInt(document.getElementById('r10_pembuangan').value) || 0,
+        lansir: parseInt(document.getElementById('r10_lansir')?.value) || 0,
         lansirSetengah: parseInt(document.getElementById('r10_lansirSetengah').value) || 0,
         lansirSatu: parseInt(document.getElementById('r10_lansirSatu').value) || 0,
       };
       
+      // Lansir terhitung retase, sedangkan lansir 1/2 hari & 1 hari tidak terhitung retase
       const sumRetase = (retaseObj.sp || 0) + (retaseObj.nd || 0) + (retaseObj.pasir || 0) + 
-                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0);
+                        (retaseObj.sirtu || 0) + (retaseObj.kosongan || 0) + (retaseObj.pembuangan || 0) + 
+                        (retaseObj.lansir || 0);
 
       // Parse air dari Genset dan Truk secara terpisah
       const gensetInputEl = document.getElementById('roda10InputGenset');
@@ -4199,6 +4210,7 @@ async function saveMasterData() {
       document.getElementById('r10_sirtu').value = '';
       document.getElementById('r10_kosongan').value = '';
       document.getElementById('r10_pembuangan').value = '';
+      if (document.getElementById('r10_lansir')) document.getElementById('r10_lansir').value = '';
       document.getElementById('r10_lansirSetengah').value = '';
       document.getElementById('r10_lansirSatu').value = '';
       if (gensetInputEl) gensetInputEl.value = '';
@@ -4732,8 +4744,9 @@ async function saveMasterData() {
       const sirtu = parseInt(document.getElementById('r10_sirtu')?.value) || 0;
       const kosongan = parseInt(document.getElementById('r10_kosongan')?.value) || 0;
       const pembuangan = parseInt(document.getElementById('r10_pembuangan')?.value) || 0;
+      const lansir = parseInt(document.getElementById('r10_lansir')?.value) || 0;
       const retaseBiasa = parseInt(document.getElementById('roda10Retase')?.value) || 0;
-      return sp + nd + pasir + sirtu + kosongan + pembuangan + retaseBiasa;
+      return sp + nd + pasir + sirtu + kosongan + pembuangan + lansir + retaseBiasa;
     }
 
     // Realtime Synchronization between 10 Roda and Exca records
@@ -4769,7 +4782,8 @@ async function saveMasterData() {
             let count = 0;
             Object.entries(mats || {}).forEach(([mKey, val]) => {
               const k = mKey.toLowerCase();
-              if (k !== 'lansirsetengah' && k !== 'lansirsatu' && !k.startsWith('lansir')) {
+              // Lansir murni dihitung retase; lansir 1/2 hari & 1 hari tidak terhitung
+              if (k !== 'lansirsetengah' && k !== 'lansirsatu' && k !== 'lansir 1/2 hari' && k !== 'lansir 1 hari' && !k.includes('1/2') && !k.includes('1 hari')) {
                 count += parseInt(val) || 0;
               }
             });
@@ -4992,6 +5006,7 @@ async function saveMasterData() {
       document.getElementById('r10_sirtu').value = item.retaseObj?.sirtu || '';
       document.getElementById('r10_kosongan').value = item.retaseObj?.kosongan || '';
       document.getElementById('r10_pembuangan').value = item.retaseObj?.pembuangan || '';
+      if (document.getElementById('r10_lansir')) document.getElementById('r10_lansir').value = item.retaseObj?.lansir || '';
       document.getElementById('r10_lansirSetengah').value = item.retaseObj?.lansirSetengah || '';
       document.getElementById('r10_lansirSatu').value = item.retaseObj?.lansirSatu || '';
       // Load air inputs - new split fields or legacy single field
@@ -5233,7 +5248,8 @@ async function saveMasterData() {
         let statusSolarHtml = item.statusSolar || (item.isFull ? 'FULL' : 'TF');
         let retaseTotal = item.retaseObj ? (
           (item.retaseObj.sp || 0) + (item.retaseObj.nd || 0) + (item.retaseObj.pasir || 0) + 
-          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0)
+          (item.retaseObj.sirtu || 0) + (item.retaseObj.kosongan || 0) + (item.retaseObj.pembuangan || 0) + 
+          (item.retaseObj.lansir || 0)
         ) : 0;
         let retaseBiasa = item.retase !== undefined && !item.retaseObj ? item.retase : (item.retase !== undefined && item.retase !== '' ? item.retase : '-');
 
@@ -5248,7 +5264,7 @@ async function saveMasterData() {
           if (item.excaMaterials && Object.keys(item.excaMaterials).length > 0) {
             const shortLabels = {
               sp: 'SP', nd: 'ND', pasir: 'Pasir', sirtu: 'Sirtu', kosongan: 'Kosong',
-              pembuangan: 'Buang', lansirSetengah: 'Lansir 1/2', lansirSatu: 'Lansir 1'
+              pembuangan: 'Buang', lansir: 'Lansir', lansirSetengah: 'Lansir 1/2', lansirSatu: 'Lansir 1'
             };
             const detailParts = [];
             Object.entries(item.excaMaterials).forEach(([op, mats]) => {
@@ -6026,6 +6042,7 @@ async function saveMasterData() {
         { key: 'sirtu', label: 'Sirtu' },
         { key: 'kosongan', label: 'Kosongan' },
         { key: 'pembuangan', label: 'Pembuangan' },
+        { key: 'lansir', label: 'Lansir' },
         { key: 'lansirSetengah', label: 'Lansir 1/2 hari' },
         { key: 'lansirSatu', label: 'Lansir 1 hari' }
       ];
@@ -6450,6 +6467,7 @@ async function saveMasterData() {
               { key: 'sirtu', label: 'sirtu' },
               { key: 'kosongan', label: 'kosongan' },
               { key: 'pembuangan', label: 'pembuangan' },
+              { key: 'lansir', label: 'lansir' },
               { key: 'lansirSetengah', label: 'lansir 1/2 hari' },
               { key: 'lansirSatu', label: 'lansir 1 hari' }
            ];
